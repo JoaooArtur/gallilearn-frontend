@@ -1,63 +1,52 @@
 
-import React from 'react';
+import React, { useState } from 'react';
+import { useQuery } from '@tanstack/react-query';
 import NavBar from '@/components/NavBar';
 import StarField from '@/components/StarField';
 import SubjectCard from '@/components/SubjectCard';
 import { Link } from 'react-router-dom';
-
-// Dados de exemplo para a página de todos os assuntos
-const mockSubjects = [
-  {
-    id: '1',
-    title: 'Introdução à Astrofísica',
-    description: 'Conceitos fundamentais para entender o universo.',
-    completed: 2,
-    total: 5,
-    icon: '🌌'
-  },
-  {
-    id: '2',
-    title: 'Sistema Solar',
-    description: 'Explore os planetas, luas e outros objetos do nosso sistema solar.',
-    completed: 0,
-    total: 4,
-    icon: '🪐'
-  },
-  {
-    id: '3',
-    title: 'Estrelas e Galáxias',
-    description: 'Como as estrelas nascem, vivem e morrem, e a formação de galáxias.',
-    completed: 0,
-    total: 6,
-    icon: '✨'
-  },
-  {
-    id: '4',
-    title: 'Cosmologia',
-    description: 'A origem, evolução e o destino final do Universo.',
-    completed: 0,
-    total: 7,
-    icon: '🔭'
-  },
-  {
-    id: '5',
-    title: 'Astrofísica de Altas Energias',
-    description: 'Fenômenos energéticos como buracos negros e supernovas.',
-    completed: 0,
-    total: 5,
-    icon: '⚡'
-  },
-  {
-    id: '6',
-    title: 'Exoplanetas',
-    description: 'Descoberta e caracterização de planetas fora do Sistema Solar.',
-    completed: 0,
-    total: 4,
-    icon: '🌍'
-  }
-];
+import { Button } from '@/components/ui/button';
+import { Pagination, PaginationContent, PaginationItem, PaginationLink, PaginationNext, PaginationPrevious } from '@/components/ui/pagination';
+import { subjectsService, PaginatedResponse, Subject } from '@/services/subjects.service';
+import { toast } from 'sonner';
 
 const SubjectsPage = () => {
+  const [page, setPage] = useState(1);
+  const limit = 10;
+
+  const { data, isLoading, isError } = useQuery({
+    queryKey: ['subjects', page, limit],
+    queryFn: () => subjectsService.getSubjects(page, limit),
+    retry: 1,
+    onError: (error) => {
+      toast.error('Failed to load subjects', {
+        description: error instanceof Error ? error.message : 'Please try again later'
+      });
+    }
+  });
+
+  const handlePageChange = (newPage: number) => {
+    if (newPage < 1) return;
+    if (data && !data.page.hasNext && newPage > data.page.number) return;
+    setPage(newPage);
+  };
+
+  // Mock icons for subjects - in a real application, these would come from the API
+  const getIconForSubject = (index: number) => {
+    const icons = ['🌌', '🪐', '✨', '🔭', '⚡', '🌍'];
+    return icons[index % icons.length];
+  };
+
+  // Convert API subjects to the format expected by SubjectCard
+  const mapSubjectToCardProps = (subject: Subject, index: number) => ({
+    id: subject.id,
+    title: subject.name,
+    description: subject.description,
+    completed: 0, // This would come from user progress data in a real app
+    total: 5,     // This would be the total lessons in a real app
+    icon: getIconForSubject(index)
+  });
+
   return (
     <div className="min-h-screen pb-16">
       <StarField />
@@ -75,19 +64,58 @@ const SubjectsPage = () => {
           </p>
         </div>
         
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {mockSubjects.map((subject) => (
-            <SubjectCard 
-              key={subject.id}
-              id={subject.id}
-              title={subject.title}
-              description={subject.description}
-              completed={subject.completed}
-              total={subject.total}
-              icon={subject.icon}
-            />
-          ))}
-        </div>
+        {isLoading ? (
+          <div className="flex justify-center p-12">
+            <div className="w-8 h-8 rounded-full border-4 border-primary border-t-transparent animate-spin"></div>
+          </div>
+        ) : isError ? (
+          <div className="text-center p-12">
+            <p className="text-destructive mb-4">Não foi possível carregar os assuntos.</p>
+            <Button onClick={() => window.location.reload()}>Tentar novamente</Button>
+          </div>
+        ) : data && data.items.length > 0 ? (
+          <>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              {data.items.map((subject, index) => (
+                <SubjectCard 
+                  key={subject.id}
+                  {...mapSubjectToCardProps(subject, index)}
+                />
+              ))}
+            </div>
+            
+            <Pagination className="mt-8">
+              <PaginationContent>
+                <PaginationItem>
+                  <PaginationPrevious 
+                    onClick={() => handlePageChange(page - 1)}
+                    className={!data.page.hasPrevious ? "pointer-events-none opacity-50" : "cursor-pointer"}
+                  />
+                </PaginationItem>
+                <PaginationItem>
+                  <PaginationLink isActive>{data.page.number}</PaginationLink>
+                </PaginationItem>
+                {data.page.hasNext && (
+                  <PaginationItem>
+                    <PaginationLink onClick={() => handlePageChange(page + 1)} className="cursor-pointer">
+                      {data.page.number + 1}
+                    </PaginationLink>
+                  </PaginationItem>
+                )}
+                <PaginationItem>
+                  <PaginationNext 
+                    onClick={() => handlePageChange(page + 1)}
+                    className={!data.page.hasNext ? "pointer-events-none opacity-50" : "cursor-pointer"}
+                  />
+                </PaginationItem>
+              </PaginationContent>
+            </Pagination>
+          </>
+        ) : (
+          <div className="text-center p-12">
+            <p className="text-muted-foreground mb-4">Nenhum assunto encontrado.</p>
+          </div>
+        )}
       </main>
     </div>
   );

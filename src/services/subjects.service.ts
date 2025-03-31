@@ -1,14 +1,24 @@
 
 import { apiService } from './api.service';
 
-// Subject interface
+// Subject interface updated to match API response
 export interface Subject {
   id: string;
-  title: string;
+  name: string;
   description: string;
-  completed: number;
-  total: number;
-  icon: string;
+  index: number;
+  createdAt: string;
+}
+
+// Paginated response interface
+export interface PaginatedResponse<T> {
+  items: T[];
+  page: {
+    hasNext: boolean;
+    hasPrevious: boolean;
+    number: number;
+    size: number;
+  };
 }
 
 // Lesson interface
@@ -37,17 +47,17 @@ export interface Question {
  */
 export const subjectsService = {
   /**
-   * Get all subjects
+   * Get subjects with pagination
    */
-  async getAllSubjects(): Promise<Subject[]> {
-    const response = await apiService.get<Subject[]>('/subjects');
+  async getSubjects(page: number = 1, limit: number = 10): Promise<PaginatedResponse<Subject>> {
+    const response = await apiService.get<PaginatedResponse<Subject>>(`/subjects/subject?Offset=${page}&Limit=${limit}`);
     
     if (response.error) {
       console.error('Failed to fetch subjects:', response.error);
       throw new Error(response.error);
     }
     
-    return response.data || [];
+    return response.data as PaginatedResponse<Subject>;
   },
   
   /**
