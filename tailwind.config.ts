@@ -1,3 +1,4 @@
+
 import type { Config } from "tailwindcss";
 
 export default {
@@ -61,6 +62,16 @@ export default {
 					'accent-foreground': 'hsl(var(--sidebar-accent-foreground))',
 					border: 'hsl(var(--sidebar-border))',
 					ring: 'hsl(var(--sidebar-ring))'
+				},
+				astro: {
+					'deep-blue': '#0B0E2D',
+					'cosmic-purple': '#3F2C82',
+					'galaxy-blue': '#1D3461',
+					'nebula-pink': '#8A4FFF',
+					'star-gold': '#FFD700',
+					'planet-teal': '#38AECC',
+					'black-hole': '#121212',
+					'meteor-orange': '#FF7F50',
 				}
 			},
 			borderRadius: {
@@ -84,11 +95,31 @@ export default {
 					to: {
 						height: '0'
 					}
+				},
+				'float': {
+					'0%, 100%': { transform: 'translateY(0)' },
+					'50%': { transform: 'translateY(-10px)' }
+				},
+				'pulse-star': {
+					'0%, 100%': { opacity: '1' },
+					'50%': { opacity: '0.5' }
+				},
+				'spin-slow': {
+					from: { transform: 'rotate(0deg)' },
+					to: { transform: 'rotate(360deg)' }
 				}
 			},
 			animation: {
 				'accordion-down': 'accordion-down 0.2s ease-out',
-				'accordion-up': 'accordion-up 0.2s ease-out'
+				'accordion-up': 'accordion-up 0.2s ease-out',
+				'float': 'float 6s ease-in-out infinite',
+				'pulse-star': 'pulse-star 3s ease-in-out infinite',
+				'spin-slow': 'spin-slow 20s linear infinite'
+			},
+			backgroundImage: {
+				'space-gradient': 'linear-gradient(to bottom, #0B0E2D, #1D3461, #3F2C82)',
+				'cosmic-glow': 'radial-gradient(circle, rgba(138,79,255,0.3) 0%, rgba(29,52,97,0) 70%)',
+				'stars': 'url("/stars-bg.png")',
 			}
 		}
 	},
