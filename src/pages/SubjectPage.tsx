@@ -14,15 +14,12 @@ import {
   CardHeader, 
   CardTitle 
 } from '@/components/ui/card';
-import { Pagination, PaginationContent, PaginationItem, PaginationLink, PaginationNext, PaginationPrevious } from '@/components/ui/pagination';
 import { Loader2 } from 'lucide-react';
-import { subjectsService, Subject, Lesson, PaginatedResponse } from '@/services/subjects.service';
+import { subjectsService, StudentLesson, Subject } from '@/services/subjects.service';
 import { toast } from 'sonner';
 
 const SubjectPage = () => {
   const { subjectId } = useParams<{ subjectId: string }>();
-  const [page, setPage] = useState(1);
-  const limit = 10;
   
   // Fetch subject details
   const { 
@@ -35,14 +32,14 @@ const SubjectPage = () => {
     enabled: !!subjectId
   });
   
-  // Fetch lessons for the subject
+  // Fetch student lessons for the subject
   const {
-    data: lessonsData,
+    data: studentLessons,
     isLoading: lessonsLoading,
     error: lessonsError
   } = useQuery({
-    queryKey: ['lessons', subjectId, page, limit],
-    queryFn: () => subjectId ? subjectsService.getLessonsBySubjectId(subjectId, page, limit) : Promise.reject('No subject ID provided'),
+    queryKey: ['studentLessons', subjectId],
+    queryFn: () => subjectId ? subjectsService.getStudentLessonsBySubjectId(subjectId) : Promise.reject('No subject ID provided'),
     enabled: !!subjectId
   });
   
@@ -72,7 +69,7 @@ const SubjectPage = () => {
     );
   }
   
-  if (!subject || !lessonsData) {
+  if (!subject || !studentLessons) {
     return (
       <div className="min-h-screen flex flex-col items-center justify-center">
         <h1 className="text-2xl mb-4">Assunto não encontrado</h1>
@@ -84,16 +81,21 @@ const SubjectPage = () => {
   }
   
   // Process lessons data for UI display
-  const lessons = lessonsData.items.map((lesson, index) => ({
-    ...lesson,
-    questions: 5, // Placeholder for now - would come from API in real implementation
-    completed: index === 0, // Just for demonstration
-    locked: index > 1 // Lock lessons after the second one for demonstration
-  }));
+  const processedLessons = studentLessons.map((studentLesson, index) => {
+    const isFinished = studentLesson.status.name === 'Finished';
+    return {
+      id: studentLesson.subject.id,
+      subjectId: studentLesson.subject.subjectId,
+      title: studentLesson.subject.title,
+      questions: studentLesson.subject.questionsCount,
+      completed: isFinished,
+      locked: !isFinished && index > 0 // Lock lessons after the first one if not completed
+    };
+  });
   
   // Calculate progress
-  const completedLessons = lessons.filter(lesson => lesson.completed).length;
-  const totalLessons = lessons.length;
+  const completedLessons = processedLessons.filter(lesson => lesson.completed).length;
+  const totalLessons = processedLessons.length;
   
   return (
     <div className="min-h-screen pb-16">
@@ -130,47 +132,20 @@ const SubjectPage = () => {
         
         <h2 className="text-2xl font-bold mb-6">Lições</h2>
         
-        {lessons.length > 0 ? (
-          <>
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-              {lessons.map((lesson) => (
-                <LessonCard 
-                  key={lesson.id}
-                  id={lesson.id}
-                  subjectId={lesson.subjectId}
-                  title={lesson.title}
-                  questions={lesson.questions || 0}
-                  completed={lesson.completed || false}
-                  locked={lesson.locked || false}
-                />
-              ))}
-            </div>
-            
-            {/* Pagination */}
-            {(lessonsData.page.hasNext || lessonsData.page.hasPrevious) && (
-              <Pagination className="mt-8">
-                <PaginationContent>
-                  <PaginationItem>
-                    <PaginationPrevious 
-                      onClick={() => setPage(p => Math.max(1, p - 1))}
-                      className={!lessonsData.page.hasPrevious ? "pointer-events-none opacity-50" : "cursor-pointer"}
-                    />
-                  </PaginationItem>
-                  
-                  <PaginationItem>
-                    <PaginationLink isActive>{lessonsData.page.number}</PaginationLink>
-                  </PaginationItem>
-                  
-                  <PaginationItem>
-                    <PaginationNext 
-                      onClick={() => setPage(p => lessonsData.page.hasNext ? p + 1 : p)}
-                      className={!lessonsData.page.hasNext ? "pointer-events-none opacity-50" : "cursor-pointer"}
-                    />
-                  </PaginationItem>
-                </PaginationContent>
-              </Pagination>
-            )}
-          </>
+        {processedLessons.length > 0 ? (
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+            {processedLessons.map((lesson, index) => (
+              <LessonCard 
+                key={lesson.id}
+                id={lesson.id}
+                subjectId={lesson.subjectId}
+                title={lesson.title}
+                questions={5} // Fixed to 5 questions as requested
+                completed={lesson.completed}
+                locked={lesson.locked}
+              />
+            ))}
+          </div>
         ) : (
           <div className="text-center py-12">
             <p className="text-muted-foreground mb-4">Nenhuma lição encontrada para este assunto.</p>

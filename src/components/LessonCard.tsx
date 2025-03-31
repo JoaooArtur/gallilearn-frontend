@@ -43,8 +43,8 @@ const LessonCard: React.FC<LessonCardProps> = ({
         
         <h3 className="font-medium mb-2">{title}</h3>
         
-        <Badge variant="outline" className="mb-2">
-          {questions} {questions === 1 ? 'pergunta' : 'perguntas'}
+        <Badge variant={completed ? "success" : "outline"} className="mb-2">
+          {completed ? "Concluída" : `${questions} ${questions === 1 ? 'pergunta' : 'perguntas'}`}
         </Badge>
       </CardContent>
       

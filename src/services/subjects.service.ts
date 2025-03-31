@@ -35,6 +35,23 @@ export interface Lesson {
   locked?: boolean;
 }
 
+// StudentLesson interface to match new endpoint
+export interface StudentLesson {
+  subject: {
+    id: string;
+    subjectId: string;
+    title: string;
+    content: string;
+    questionsCount: number;
+    index: number;
+    createdAt: string;
+  };
+  status: {
+    name: string;
+    value: number;
+  };
+}
+
 // Question interface updated to match API response
 export interface Question {
   id: string;
@@ -150,6 +167,20 @@ export const subjectsService = {
     }
     
     return response.data as PaginatedResponse<Lesson>;
+  },
+
+  /**
+   * Get lessons for a student and subject
+   */
+  async getStudentLessonsBySubjectId(subjectId: string): Promise<StudentLesson[]> {
+    const response = await apiService.get<StudentLesson[]>(`/students/${STUDENT_ID}/${subjectId}/lessons`);
+    
+    if (response.error) {
+      console.error(`Failed to fetch student lessons for subject ${subjectId}:`, response.error);
+      throw new Error(response.error);
+    }
+    
+    return response.data as StudentLesson[];
   },
   
   /**
