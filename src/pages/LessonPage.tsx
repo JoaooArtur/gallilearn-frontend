@@ -1,124 +1,116 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
+import { useQuery, useMutation } from '@tanstack/react-query';
 import NavBar from '@/components/NavBar';
 import StarField from '@/components/StarField';
 import QuizQuestion from '@/components/QuizQuestion';
 import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
 import { useToast } from '@/components/ui/use-toast';
-
-// Dados de exemplo para a página de lição
-const mockLessons = {
-  '101': {
-    id: '101',
-    title: 'O que é Astrofísica?',
-    subjectId: '1',
-    questions: [
-      {
-        id: '1001',
-        text: 'O que estuda a Astrofísica?',
-        options: [
-          { id: 'a', text: 'Apenas a composição química dos planetas' },
-          { id: 'b', text: 'A aplicação das leis da física para compreender objetos e fenômenos astronômicos' },
-          { id: 'c', text: 'Somente o movimento dos planetas ao redor do Sol' },
-          { id: 'd', text: 'Apenas a origem do universo' }
-        ],
-        correctOptionId: 'b'
-      },
-      {
-        id: '1002',
-        text: 'Qual destes NÃO é um campo de estudo da Astrofísica?',
-        options: [
-          { id: 'a', text: 'Cosmologia' },
-          { id: 'b', text: 'Evolução estelar' },
-          { id: 'c', text: 'Astrologia' },
-          { id: 'd', text: 'Formação planetária' }
-        ],
-        correctOptionId: 'c'
-      },
-      {
-        id: '1003',
-        text: 'Qual é uma das principais ferramentas de observação usadas na Astrofísica moderna?',
-        options: [
-          { id: 'a', text: 'Microscópios eletrônicos' },
-          { id: 'b', text: 'Telescópios espaciais' },
-          { id: 'c', text: 'Sismógrafos' },
-          { id: 'd', text: 'Pêndulos' }
-        ],
-        correctOptionId: 'b'
-      },
-      {
-        id: '1004',
-        text: 'Qual destas é uma forma de energia estudada em Astrofísica?',
-        options: [
-          { id: 'a', text: 'Energia mística' },
-          { id: 'b', text: 'Energia escura' },
-          { id: 'c', text: 'Energia vital' },
-          { id: 'd', text: 'Energia espiritualizada' }
-        ],
-        correctOptionId: 'b'
-      },
-      {
-        id: '1005',
-        text: 'Quem é considerado o pai da Astrofísica moderna?',
-        options: [
-          { id: 'a', text: 'Albert Einstein' },
-          { id: 'b', text: 'Stephen Hawking' },
-          { id: 'c', text: 'Isaac Newton' },
-          { id: 'd', text: 'Carl Sagan' }
-        ],
-        correctOptionId: 'a'
-      }
-    ]
-  },
-  '102': {
-    id: '102',
-    title: 'Conceitos Básicos de Astronomia',
-    subjectId: '1',
-    questions: [
-      {
-        id: '1006',
-        text: 'Qual é a unidade utilizada para medir distâncias astronômicas dentro do Sistema Solar?',
-        options: [
-          { id: 'a', text: 'Ano-luz' },
-          { id: 'b', text: 'Quilômetro' },
-          { id: 'c', text: 'Unidade Astronômica (UA)' },
-          { id: 'd', text: 'Parsec' }
-        ],
-        correctOptionId: 'c'
-      },
-      {
-        id: '1007',
-        text: 'O que é uma constelação?',
-        options: [
-          { id: 'a', text: 'Um grupo de estrelas fisicamente conectadas entre si' },
-          { id: 'b', text: 'Um padrão aparente de estrelas no céu noturno' },
-          { id: 'c', text: 'Um tipo específico de galáxia' },
-          { id: 'd', text: 'Uma nebulosa luminosa' }
-        ],
-        correctOptionId: 'b'
-      }
-    ]
-  }
-};
+import { Loader2 } from 'lucide-react';
+import { subjectsService, Question, AnswerResponse } from '@/services/subjects.service';
+import { toast } from 'sonner';
 
 const LessonPage = () => {
   const { subjectId, lessonId } = useParams<{ subjectId: string; lessonId: string }>();
   const navigate = useNavigate();
   const { toast } = useToast();
   
-  // Em uma aplicação real, buscaríamos os dados do servidor
-  const lesson = mockLessons[lessonId as keyof typeof mockLessons];
-  
   const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
   const [correctAnswers, setCorrectAnswers] = useState(0);
   const [completed, setCompleted] = useState(false);
+  const [attemptId, setAttemptId] = useState<string | null>(null);
+  const [answerResults, setAnswerResults] = useState<AnswerResponse[]>([]);
   
-  if (!lesson) {
+  // Fetch questions for this lesson
+  const { 
+    data: questions,
+    isLoading: questionsLoading,
+    error: questionsError
+  } = useQuery({
+    queryKey: ['lessonQuestions', subjectId, lessonId],
+    queryFn: () => {
+      if (!subjectId || !lessonId) return Promise.reject('Missing parameters');
+      return subjectsService.getRandomQuestionsByLessonId(subjectId, lessonId);
+    },
+    enabled: !!subjectId && !!lessonId
+  });
+  
+  // Start lesson attempt mutation
+  const startAttemptMutation = useMutation({
+    mutationFn: () => {
+      if (!subjectId || !lessonId) return Promise.reject('Missing parameters');
+      return subjectsService.startLessonAttempt(subjectId, lessonId);
+    },
+    onSuccess: (data) => {
+      setAttemptId(data.id);
+    },
+    onError: (error) => {
+      console.error('Failed to start lesson attempt:', error);
+      toast({
+        title: "Erro",
+        description: "Não foi possível iniciar a lição. Por favor, tente novamente.",
+        variant: "destructive"
+      });
+    }
+  });
+  
+  // Submit answer mutation
+  const submitAnswerMutation = useMutation({
+    mutationFn: ({ questionId, answerId }: { questionId: string; answerId: string }) => {
+      if (!subjectId || !lessonId || !attemptId) return Promise.reject('Missing parameters');
+      return subjectsService.submitAnswer(subjectId, lessonId, attemptId, questionId, answerId);
+    },
+    onSuccess: (data) => {
+      setAnswerResults(prev => [...prev, data]);
+      if (data.isCorrect) {
+        setCorrectAnswers(prev => prev + 1);
+      }
+      
+      // Move to next question after a delay
+      setTimeout(() => {
+        if (questions && currentQuestionIndex < questions.length - 1) {
+          setCurrentQuestionIndex(prev => prev + 1);
+        } else {
+          setCompleted(true);
+        }
+      }, 1500);
+    },
+    onError: (error) => {
+      console.error('Failed to submit answer:', error);
+      toast({
+        title: "Erro",
+        description: "Não foi possível enviar a resposta. Por favor, tente novamente.",
+        variant: "destructive"
+      });
+    }
+  });
+  
+  // Start attempt when component loads
+  useEffect(() => {
+    if (subjectId && lessonId && !attemptId && !questionsLoading && questions) {
+      startAttemptMutation.mutate();
+    }
+  }, [subjectId, lessonId, questionsLoading, questions]);
+  
+  // Handle loading and error states
+  if (questionsLoading || startAttemptMutation.isPending) {
     return (
       <div className="min-h-screen flex flex-col items-center justify-center">
-        <h1 className="text-2xl mb-4">Lição não encontrada</h1>
+        <Loader2 className="h-10 w-10 animate-spin text-astro-nebula-pink" />
+        <p className="mt-4">Carregando lição...</p>
+      </div>
+    );
+  }
+  
+  if (questionsError || !questions) {
+    return (
+      <div className="min-h-screen flex flex-col items-center justify-center">
+        <h1 className="text-2xl mb-4">Erro ao carregar perguntas</h1>
+        <p className="text-muted-foreground mb-6">
+          {questionsError instanceof Error ? questionsError.message : 'Erro desconhecido'}
+        </p>
         <Link to={`/subject/${subjectId}`}>
           <Button>Voltar para o Assunto</Button>
         </Link>
@@ -126,35 +118,42 @@ const LessonPage = () => {
     );
   }
   
-  const currentQuestion = lesson.questions[currentQuestionIndex];
-  const progress = ((currentQuestionIndex + 1) / lesson.questions.length) * 100;
+  if (questions.length === 0) {
+    return (
+      <div className="min-h-screen flex flex-col items-center justify-center">
+        <h1 className="text-2xl mb-4">Nenhuma pergunta encontrada para esta lição</h1>
+        <Link to={`/subject/${subjectId}`}>
+          <Button>Voltar para o Assunto</Button>
+        </Link>
+      </div>
+    );
+  }
   
-  const handleAnswer = (isCorrect: boolean) => {
-    if (isCorrect) {
-      setCorrectAnswers(prev => prev + 1);
-    }
-    
-    // Aguarda um pouco para mostrar a próxima pergunta
-    setTimeout(() => {
-      if (currentQuestionIndex < lesson.questions.length - 1) {
-        setCurrentQuestionIndex(prev => prev + 1);
-      } else {
-        setCompleted(true);
-      }
-    }, 1500);
+  const currentQuestion = questions[currentQuestionIndex];
+  const progress = ((currentQuestionIndex + 1) / questions.length) * 100;
+  
+  const handleAnswer = (answerId: string) => {
+    submitAnswerMutation.mutate({
+      questionId: currentQuestion.id,
+      answerId: answerId
+    });
   };
   
   const handleFinish = () => {
-    const accuracy = (correctAnswers / lesson.questions.length) * 100;
+    const accuracy = (correctAnswers / questions.length) * 100;
     
-    // Em uma aplicação real, enviaríamos esta pontuação para o servidor
     toast({
       title: "Lição Concluída!",
-      description: `Você acertou ${correctAnswers} de ${lesson.questions.length} questões (${accuracy.toFixed(0)}%).`,
+      description: `Você acertou ${correctAnswers} de ${questions.length} questões (${accuracy.toFixed(0)}%).`,
     });
     
     navigate(`/subject/${subjectId}`);
   };
+  
+  // Find latest answer result for the current question
+  const currentQuestionResult = answerResults.find(
+    result => result.questionId === currentQuestion?.id
+  );
   
   return (
     <div className="min-h-screen pb-16 flex flex-col">
@@ -168,12 +167,12 @@ const LessonPage = () => {
               ← Voltar
             </Link>
             <span className="text-muted-foreground">
-              Questão {currentQuestionIndex + 1} de {lesson.questions.length}
+              Questão {currentQuestionIndex + 1} de {questions.length}
             </span>
           </div>
           
           <div className="mb-4">
-            <h1 className="text-2xl font-bold text-center">{lesson.title}</h1>
+            <h1 className="text-2xl font-bold text-center">{currentQuestion?.text || 'Carregando...'}</h1>
           </div>
           
           <div className="w-full mb-8">
@@ -184,9 +183,13 @@ const LessonPage = () => {
         {!completed ? (
           <QuizQuestion 
             question={currentQuestion.text}
-            options={currentQuestion.options}
-            correctOptionId={currentQuestion.correctOptionId}
+            options={currentQuestion.answers.map(answer => ({ id: answer.id, text: answer.text }))}
+            correctOptionId={currentQuestionResult?.correctAnswerId || ''}
+            selectedOptionId={currentQuestionResult?.answerId || ''}
+            hasSubmitted={!!currentQuestionResult}
+            isCorrect={currentQuestionResult?.isCorrect || false}
             onAnswer={handleAnswer}
+            isPending={submitAnswerMutation.isPending}
           />
         ) : (
           <div className="flex-grow flex flex-col items-center justify-center text-center">
@@ -196,10 +199,10 @@ const LessonPage = () => {
             
             <h2 className="text-2xl font-bold mb-4">Lição Completa!</h2>
             <p className="text-lg mb-2">
-              Você acertou {correctAnswers} de {lesson.questions.length} questões
+              Você acertou {correctAnswers} de {questions.length} questões
             </p>
             <p className="text-muted-foreground mb-8">
-              {correctAnswers === lesson.questions.length 
+              {correctAnswers === questions.length 
                 ? "Perfeito! Você dominou este conteúdo!" 
                 : "Continue estudando para melhorar seu conhecimento!"}
             </p>

@@ -35,16 +35,39 @@ export interface Lesson {
   locked?: boolean;
 }
 
-// Question interface
+// Question interface updated to match API response
 export interface Question {
   id: string;
+  lessonId: string;
   text: string;
-  options: {
+  level: string;
+  answers: {
     id: string;
     text: string;
   }[];
-  correctOptionId: string;
+  createdAt: string;
 }
+
+// Answer response interface
+export interface AnswerResponse {
+  attemptId: string;
+  questionId: string;
+  answerId: string;
+  correctAnswerId: string;
+  isCorrect: boolean;
+}
+
+// Attempt interface
+export interface AttemptResponse {
+  id: string;
+  studentId: string;
+  subjectId: string;
+  lessonId: string;
+  createdAt: string;
+}
+
+// Student ID (fixed for now as requested)
+const STUDENT_ID = '2598dd79-dc06-4140-854f-24da3b87a8c7';
 
 /**
  * Service for subject-related API calls
@@ -93,10 +116,10 @@ export const subjectsService = {
   },
   
   /**
-   * Get questions for a lesson
+   * Get random questions for a lesson
    */
-  async getQuestionsByLessonId(lessonId: string): Promise<Question[]> {
-    const response = await apiService.get<Question[]>(`/lessons/${lessonId}/questions`);
+  async getRandomQuestionsByLessonId(subjectId: string, lessonId: string): Promise<Question[]> {
+    const response = await apiService.get<Question[]>(`/subjects/${subjectId}/${lessonId}/questions/random`);
     
     if (response.error) {
       console.error(`Failed to fetch questions for lesson ${lessonId}:`, response.error);
@@ -107,14 +130,42 @@ export const subjectsService = {
   },
   
   /**
-   * Submit lesson results
+   * Start a lesson attempt
    */
-  async submitLessonResults(lessonId: string, results: { correctAnswers: number, totalQuestions: number }): Promise<void> {
-    const response = await apiService.post<typeof results, void>(`/lessons/${lessonId}/results`, results);
+  async startLessonAttempt(subjectId: string, lessonId: string): Promise<AttemptResponse> {
+    const response = await apiService.post<{}, AttemptResponse>(
+      `/students/${STUDENT_ID}/${subjectId}/${lessonId}/attempt`,
+      {}
+    );
     
     if (response.error) {
-      console.error(`Failed to submit results for lesson ${lessonId}:`, response.error);
+      console.error(`Failed to start attempt for lesson ${lessonId}:`, response.error);
       throw new Error(response.error);
     }
+    
+    return response.data as AttemptResponse;
+  },
+  
+  /**
+   * Submit answer for a question
+   */
+  async submitAnswer(
+    subjectId: string, 
+    lessonId: string, 
+    attemptId: string, 
+    questionId: string, 
+    answerId: string
+  ): Promise<AnswerResponse> {
+    const response = await apiService.post<{}, AnswerResponse>(
+      `/students/${STUDENT_ID}/${subjectId}/${lessonId}/${attemptId}/answer?QuestionId=${questionId}&AnswerId=${answerId}`,
+      {}
+    );
+    
+    if (response.error) {
+      console.error(`Failed to submit answer for question ${questionId}:`, response.error);
+      throw new Error(response.error);
+    }
+    
+    return response.data as AnswerResponse;
   }
 };
