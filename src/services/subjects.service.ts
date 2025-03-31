@@ -21,14 +21,18 @@ export interface PaginatedResponse<T> {
   };
 }
 
-// Lesson interface
+// Lesson interface updated to match API response
 export interface Lesson {
   id: string;
   subjectId: string;
   title: string;
-  questions: number;
-  completed: boolean;
-  locked: boolean;
+  content: string;
+  index: number;
+  createdAt: string;
+  // These fields are for UI display and will be added manually
+  questions?: number;
+  completed?: boolean;
+  locked?: boolean;
 }
 
 // Question interface
@@ -75,17 +79,17 @@ export const subjectsService = {
   },
   
   /**
-   * Get lessons for a subject
+   * Get lessons for a subject with pagination
    */
-  async getLessonsBySubjectId(subjectId: string): Promise<Lesson[]> {
-    const response = await apiService.get<Lesson[]>(`/subjects/${subjectId}/lessons`);
+  async getLessonsBySubjectId(subjectId: string, page: number = 1, limit: number = 10): Promise<PaginatedResponse<Lesson>> {
+    const response = await apiService.get<PaginatedResponse<Lesson>>(`/subjects/${subjectId}/lesson?Offset=${page}&Limit=${limit}`);
     
     if (response.error) {
       console.error(`Failed to fetch lessons for subject ${subjectId}:`, response.error);
       throw new Error(response.error);
     }
     
-    return response.data || [];
+    return response.data as PaginatedResponse<Lesson>;
   },
   
   /**

@@ -1,6 +1,7 @@
 
-import React from 'react';
+import React, { useState } from 'react';
 import { useParams, Link } from 'react-router-dom';
+import { useQuery } from '@tanstack/react-query';
 import NavBar from '@/components/NavBar';
 import StarField from '@/components/StarField';
 import LessonCard from '@/components/LessonCard';
@@ -13,153 +14,65 @@ import {
   CardHeader, 
   CardTitle 
 } from '@/components/ui/card';
-
-// Dados de exemplo para a página de assunto
-const mockSubjects = {
-  '1': {
-    id: '1',
-    title: 'Introdução à Astrofísica',
-    description: 'Conceitos fundamentais para entender o universo e seus fenômenos.',
-    lessons: [
-      {
-        id: '101',
-        title: 'O que é Astrofísica?',
-        questions: 5,
-        completed: true,
-        locked: false
-      },
-      {
-        id: '102',
-        title: 'Conceitos Básicos de Astronomia',
-        questions: 7,
-        completed: true,
-        locked: false
-      },
-      {
-        id: '103',
-        title: 'Leis Fundamentais da Física',
-        questions: 8,
-        completed: false,
-        locked: false
-      },
-      {
-        id: '104',
-        title: 'Escalas do Universo',
-        questions: 6,
-        completed: false,
-        locked: true
-      },
-      {
-        id: '105',
-        title: 'História da Astronomia',
-        questions: 10,
-        completed: false,
-        locked: true
-      }
-    ],
-    completed: 2,
-    total: 5,
-    icon: '🌌'
-  },
-  '2': {
-    id: '2',
-    title: 'Sistema Solar',
-    description: 'Explore os planetas, luas e outros objetos do nosso sistema solar.',
-    lessons: [
-      {
-        id: '201',
-        title: 'O Sol: Nossa Estrela',
-        questions: 6,
-        completed: false,
-        locked: false
-      },
-      {
-        id: '202',
-        title: 'Planetas Rochosos',
-        questions: 8,
-        completed: false,
-        locked: true
-      },
-      {
-        id: '203',
-        title: 'Planetas Gasosos',
-        questions: 7,
-        completed: false,
-        locked: true
-      },
-      {
-        id: '204',
-        title: 'Asteroides e Cometas',
-        questions: 5,
-        completed: false,
-        locked: true
-      }
-    ],
-    completed: 0,
-    total: 4,
-    icon: '🪐'
-  },
-  '3': {
-    id: '3',
-    title: 'Estrelas e Galáxias',
-    description: 'Como as estrelas nascem, vivem e morrem, e a formação de galáxias.',
-    lessons: [
-      {
-        id: '301',
-        title: 'Ciclo de Vida das Estrelas',
-        questions: 9,
-        completed: false,
-        locked: false
-      },
-      {
-        id: '302',
-        title: 'Classificação Estelar',
-        questions: 7,
-        completed: false,
-        locked: true
-      },
-      {
-        id: '303',
-        title: 'Galáxias e sua Estrutura',
-        questions: 8,
-        completed: false,
-        locked: true
-      },
-      {
-        id: '304',
-        title: 'A Via Láctea',
-        questions: 6,
-        completed: false,
-        locked: true
-      },
-      {
-        id: '305',
-        title: 'Supernovas e Buracos Negros',
-        questions: 10,
-        completed: false,
-        locked: true
-      },
-      {
-        id: '306',
-        title: 'Expansão do Universo',
-        questions: 8,
-        completed: false,
-        locked: true
-      }
-    ],
-    completed: 0,
-    total: 6,
-    icon: '✨'
-  }
-};
+import { Pagination, PaginationContent, PaginationItem, PaginationLink, PaginationNext, PaginationPrevious } from '@/components/ui/pagination';
+import { Loader2 } from 'lucide-react';
+import { subjectsService, Subject, Lesson, PaginatedResponse } from '@/services/subjects.service';
+import { toast } from 'sonner';
 
 const SubjectPage = () => {
   const { subjectId } = useParams<{ subjectId: string }>();
+  const [page, setPage] = useState(1);
+  const limit = 10;
   
-  // Em uma aplicação real, buscaríamos os dados do servidor
-  const subject = mockSubjects[subjectId as keyof typeof mockSubjects];
+  // Fetch subject details
+  const { 
+    data: subject,
+    isLoading: subjectLoading,
+    error: subjectError
+  } = useQuery({
+    queryKey: ['subject', subjectId],
+    queryFn: () => subjectId ? subjectsService.getSubjectById(subjectId) : Promise.reject('No subject ID provided'),
+    enabled: !!subjectId
+  });
   
-  if (!subject) {
+  // Fetch lessons for the subject
+  const {
+    data: lessonsData,
+    isLoading: lessonsLoading,
+    error: lessonsError
+  } = useQuery({
+    queryKey: ['lessons', subjectId, page, limit],
+    queryFn: () => subjectId ? subjectsService.getLessonsBySubjectId(subjectId, page, limit) : Promise.reject('No subject ID provided'),
+    enabled: !!subjectId
+  });
+  
+  // Handle loading and error states
+  if (subjectLoading || lessonsLoading) {
+    return (
+      <div className="min-h-screen flex flex-col items-center justify-center">
+        <Loader2 className="h-10 w-10 animate-spin text-astro-nebula-pink" />
+        <p className="mt-4">Carregando informações...</p>
+      </div>
+    );
+  }
+  
+  if (subjectError || lessonsError) {
+    toast.error('Erro ao carregar dados do assunto ou lições');
+    return (
+      <div className="min-h-screen flex flex-col items-center justify-center">
+        <h1 className="text-2xl mb-4">Erro ao carregar dados</h1>
+        <p className="text-muted-foreground mb-6">
+          {subjectError instanceof Error ? subjectError.message : 'Erro desconhecido'}
+          {lessonsError instanceof Error ? lessonsError.message : ''}
+        </p>
+        <Link to="/dashboard">
+          <Button>Voltar para Dashboard</Button>
+        </Link>
+      </div>
+    );
+  }
+  
+  if (!subject || !lessonsData) {
     return (
       <div className="min-h-screen flex flex-col items-center justify-center">
         <h1 className="text-2xl mb-4">Assunto não encontrado</h1>
@@ -169,6 +82,18 @@ const SubjectPage = () => {
       </div>
     );
   }
+  
+  // Process lessons data for UI display
+  const lessons = lessonsData.items.map((lesson, index) => ({
+    ...lesson,
+    questions: 5, // Placeholder for now - would come from API in real implementation
+    completed: index === 0, // Just for demonstration
+    locked: index > 1 // Lock lessons after the second one for demonstration
+  }));
+  
+  // Calculate progress
+  const completedLessons = lessons.filter(lesson => lesson.completed).length;
+  const totalLessons = lessons.length;
   
   return (
     <div className="min-h-screen pb-16">
@@ -183,10 +108,11 @@ const SubjectPage = () => {
           
           <div className="flex items-center gap-4 mb-4">
             <div className="w-12 h-12 flex items-center justify-center rounded-full bg-astro-deep-blue border border-astro-nebula-pink/50 text-2xl">
-              {subject.icon}
+              {/* Placeholder icon */}
+              🌌
             </div>
             <div>
-              <h1 className="text-3xl font-bold">{subject.title}</h1>
+              <h1 className="text-3xl font-bold">{subject.name}</h1>
               <p className="text-muted-foreground">{subject.description}</p>
             </div>
           </div>
@@ -194,28 +120,62 @@ const SubjectPage = () => {
           <Card className="mb-8">
             <CardContent className="p-4">
               <ProgressBar 
-                value={subject.completed} 
-                max={subject.total} 
-                label={`Progresso em ${subject.title}`} 
+                value={completedLessons} 
+                max={totalLessons} 
+                label={`Progresso em ${subject.name}`} 
               />
             </CardContent>
           </Card>
         </div>
         
         <h2 className="text-2xl font-bold mb-6">Lições</h2>
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-          {subject.lessons.map((lesson) => (
-            <LessonCard 
-              key={lesson.id}
-              id={lesson.id}
-              subjectId={subject.id}
-              title={lesson.title}
-              questions={lesson.questions}
-              completed={lesson.completed}
-              locked={lesson.locked}
-            />
-          ))}
-        </div>
+        
+        {lessons.length > 0 ? (
+          <>
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+              {lessons.map((lesson) => (
+                <LessonCard 
+                  key={lesson.id}
+                  id={lesson.id}
+                  subjectId={lesson.subjectId}
+                  title={lesson.title}
+                  questions={lesson.questions || 0}
+                  completed={lesson.completed || false}
+                  locked={lesson.locked || false}
+                />
+              ))}
+            </div>
+            
+            {/* Pagination */}
+            {(lessonsData.page.hasNext || lessonsData.page.hasPrevious) && (
+              <Pagination className="mt-8">
+                <PaginationContent>
+                  <PaginationItem>
+                    <PaginationPrevious 
+                      onClick={() => setPage(p => Math.max(1, p - 1))}
+                      className={!lessonsData.page.hasPrevious ? "pointer-events-none opacity-50" : "cursor-pointer"}
+                    />
+                  </PaginationItem>
+                  
+                  <PaginationItem>
+                    <PaginationLink isActive>{lessonsData.page.number}</PaginationLink>
+                  </PaginationItem>
+                  
+                  <PaginationItem>
+                    <PaginationNext 
+                      onClick={() => setPage(p => lessonsData.page.hasNext ? p + 1 : p)}
+                      className={!lessonsData.page.hasNext ? "pointer-events-none opacity-50" : "cursor-pointer"}
+                    />
+                  </PaginationItem>
+                </PaginationContent>
+              </Pagination>
+            )}
+          </>
+        ) : (
+          <div className="text-center py-12">
+            <p className="text-muted-foreground mb-4">Nenhuma lição encontrada para este assunto.</p>
+          </div>
+        )}
       </main>
     </div>
   );
