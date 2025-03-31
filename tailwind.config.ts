@@ -64,14 +64,14 @@ export default {
 					ring: 'hsl(var(--sidebar-ring))'
 				},
 				astro: {
-					'deep-blue': '#0B0E2D',
-					'cosmic-purple': '#3F2C82',
-					'galaxy-blue': '#1D3461',
-					'nebula-pink': '#8A4FFF',
-					'star-gold': '#FFD700',
-					'planet-teal': '#38AECC',
+					'deep-blue': '#0F1629',
+					'cosmic-purple': '#33215A',
+					'galaxy-blue': '#1A2440',
+					'nebula-pink': '#7239EA',
+					'star-gold': '#FFB626',
+					'planet-teal': '#27889C',
 					'black-hole': '#121212',
-					'meteor-orange': '#FF7F50',
+					'meteor-orange': '#E05D3D',
 				}
 			},
 			borderRadius: {
@@ -117,8 +117,8 @@ export default {
 				'spin-slow': 'spin-slow 20s linear infinite'
 			},
 			backgroundImage: {
-				'space-gradient': 'linear-gradient(to bottom, #0B0E2D, #1D3461, #3F2C82)',
-				'cosmic-glow': 'radial-gradient(circle, rgba(138,79,255,0.3) 0%, rgba(29,52,97,0) 70%)',
+				'space-gradient': 'linear-gradient(to bottom, #0F1629, #1A2440, #33215A)',
+				'cosmic-glow': 'radial-gradient(circle, rgba(114,57,234,0.3) 0%, rgba(26,36,64,0) 70%)',
 				'stars': 'url("/stars-bg.png")',
 			}
 		}
