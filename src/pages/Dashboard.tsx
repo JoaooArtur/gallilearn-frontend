@@ -1,5 +1,6 @@
 
 import React from 'react';
+import { useQuery } from '@tanstack/react-query';
 import NavBar from '@/components/NavBar';
 import StarField from '@/components/StarField';
 import SubjectCard from '@/components/SubjectCard';
@@ -7,36 +8,39 @@ import ProgressBar from '@/components/ProgressBar';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Link } from 'react-router-dom';
-
-// Dados de exemplo para a dashboard
-const mockSubjects = [
-  {
-    id: '1',
-    title: 'Introdução à Astrofísica',
-    description: 'Conceitos fundamentais para entender o universo.',
-    completed: 2,
-    total: 5,
-    icon: '🌌'
-  },
-  {
-    id: '2',
-    title: 'Sistema Solar',
-    description: 'Explore os planetas, luas e outros objetos do nosso sistema solar.',
-    completed: 0,
-    total: 4,
-    icon: '🪐'
-  },
-  {
-    id: '3',
-    title: 'Estrelas e Galáxias',
-    description: 'Como as estrelas nascem, vivem e morrem, e a formação de galáxias.',
-    completed: 0,
-    total: 6,
-    icon: '✨'
-  }
-];
+import { subjectsService } from '@/services/subjects.service';
+import { toast } from 'sonner';
 
 const Dashboard = () => {
+  // Get student subjects for dashboard
+  const { data: studentSubjects, isLoading, isError } = useQuery({
+    queryKey: ['studentSubjects'],
+    queryFn: () => subjectsService.getStudentSubjects(),
+    meta: {
+      onError: (error: Error) => {
+        toast.error('Failed to load subjects', {
+          description: error.message || 'Please try again later'
+        });
+      }
+    }
+  });
+
+  // Mock icons for subjects
+  const getIconForSubject = (index: number) => {
+    const icons = ['🌌', '🪐', '✨', '🔭', '⚡', '🌍'];
+    return icons[index % icons.length];
+  };
+
+  // Convert API subjects to the format expected by SubjectCard
+  const mapSubjectToCardProps = (studentSubject: any, index: number) => ({
+    id: studentSubject.subject.id,
+    title: studentSubject.subject.name,
+    description: studentSubject.subject.description,
+    completed: studentSubject.lessons.finishedLessons,
+    total: studentSubject.lessons.totalLessons,
+    icon: getIconForSubject(index)
+  });
+
   // Em uma aplicação real, estes dados viriam de um contexto ou API
   const userStats = {
     name: 'Astronauta',
@@ -142,19 +146,33 @@ const Dashboard = () => {
         </div>
         
         <h2 className="text-2xl font-bold mb-6">Seus Assuntos</h2>
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {mockSubjects.map((subject) => (
-            <SubjectCard 
-              key={subject.id}
-              id={subject.id}
-              title={subject.title}
-              description={subject.description}
-              completed={subject.completed}
-              total={subject.total}
-              icon={subject.icon}
-            />
-          ))}
-        </div>
+        
+        {isLoading ? (
+          <div className="flex justify-center p-6">
+            <div className="w-8 h-8 rounded-full border-4 border-primary border-t-transparent animate-spin"></div>
+          </div>
+        ) : isError ? (
+          <div className="text-center p-6">
+            <p className="text-destructive mb-4">Não foi possível carregar os assuntos.</p>
+            <Button onClick={() => window.location.reload()} variant="outline">Tentar novamente</Button>
+          </div>
+        ) : studentSubjects && studentSubjects.length > 0 ? (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {studentSubjects.map((subject, index) => (
+              <SubjectCard 
+                key={subject.subject.id}
+                {...mapSubjectToCardProps(subject, index)}
+              />
+            ))}
+          </div>
+        ) : (
+          <div className="text-center p-6 border border-dashed rounded-lg">
+            <p className="text-muted-foreground mb-4">Você ainda não possui assuntos. Comece a explorar agora!</p>
+            <Link to="/subjects">
+              <Button>Explorar Assuntos</Button>
+            </Link>
+          </div>
+        )}
       </main>
     </div>
   );

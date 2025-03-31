@@ -66,13 +66,50 @@ export interface AttemptResponse {
   createdAt: string;
 }
 
+// Student subject interface for dashboard
+export interface StudentSubject {
+  subject: Subject;
+  lessons: {
+    finishedLessons: number;
+    totalLessons: number;
+  };
+}
+
 // Student ID (fixed for now as requested)
-const STUDENT_ID = '2598dd79-dc06-4140-854f-24da3b87a8c7';
+const STUDENT_ID = '2a1740d1-590f-41ae-87a1-4cd9e867d479';
 
 /**
  * Service for subject-related API calls
  */
 export const subjectsService = {
+  /**
+   * Get all subjects for a student (for dashboard)
+   */
+  async getStudentSubjects(): Promise<StudentSubject[]> {
+    const response = await apiService.get<StudentSubject[]>(`/students/${STUDENT_ID}/subjects`);
+    
+    if (response.error) {
+      console.error('Failed to fetch student subjects:', response.error);
+      throw new Error(response.error);
+    }
+    
+    return response.data as StudentSubject[];
+  },
+  
+  /**
+   * Get paginated subjects for a student
+   */
+  async getStudentSubjectsPaged(page: number = 1, limit: number = 10): Promise<PaginatedResponse<StudentSubject>> {
+    const response = await apiService.get<PaginatedResponse<StudentSubject>>(`/students/${STUDENT_ID}/subjects/paged?Offset=${page}&Limit=${limit}`);
+    
+    if (response.error) {
+      console.error('Failed to fetch paginated student subjects:', response.error);
+      throw new Error(response.error);
+    }
+    
+    return response.data as PaginatedResponse<StudentSubject>;
+  },
+
   /**
    * Get subjects with pagination
    */

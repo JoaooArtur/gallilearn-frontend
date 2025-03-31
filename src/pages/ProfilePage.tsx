@@ -1,5 +1,6 @@
 
 import React from 'react';
+import { useQuery } from '@tanstack/react-query';
 import NavBar from '@/components/NavBar';
 import StarField from '@/components/StarField';
 import UserProfile from '@/components/UserProfile';
@@ -7,6 +8,8 @@ import SubjectCard from '@/components/SubjectCard';
 import { Link } from 'react-router-dom';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { subjectsService } from '@/services/subjects.service';
+import { toast } from 'sonner';
 
 // Dados de exemplo para a página de perfil
 const mockUserData = {
@@ -32,35 +35,36 @@ const mockUserData = {
   }
 };
 
-// Reutilizando os dados de assuntos
-const mockSubjects = [
-  {
-    id: '1',
-    title: 'Introdução à Astrofísica',
-    description: 'Conceitos fundamentais para entender o universo.',
-    completed: 2,
-    total: 5,
-    icon: '🌌'
-  },
-  {
-    id: '2',
-    title: 'Sistema Solar',
-    description: 'Explore os planetas, luas e outros objetos do nosso sistema solar.',
-    completed: 0,
-    total: 4,
-    icon: '🪐'
-  },
-  {
-    id: '3',
-    title: 'Estrelas e Galáxias',
-    description: 'Como as estrelas nascem, vivem e morrem, e a formação de galáxias.',
-    completed: 0,
-    total: 6,
-    icon: '✨'
-  }
-];
-
 const ProfilePage = () => {
+  // Get student subjects for profile page
+  const { data: studentSubjects, isLoading, isError } = useQuery({
+    queryKey: ['profileSubjects'],
+    queryFn: () => subjectsService.getStudentSubjects(),
+    meta: {
+      onError: (error: Error) => {
+        toast.error('Failed to load subjects', {
+          description: error.message || 'Please try again later'
+        });
+      }
+    }
+  });
+
+  // Mock icons for subjects
+  const getIconForSubject = (index: number) => {
+    const icons = ['🌌', '🪐', '✨', '🔭', '⚡', '🌍'];
+    return icons[index % icons.length];
+  };
+
+  // Convert API subjects to the format expected by SubjectCard
+  const mapSubjectToCardProps = (studentSubject: any, index: number) => ({
+    id: studentSubject.subject.id,
+    title: studentSubject.subject.name,
+    description: studentSubject.subject.description,
+    completed: studentSubject.lessons.finishedLessons,
+    total: studentSubject.lessons.totalLessons,
+    icon: getIconForSubject(index)
+  });
+
   return (
     <div className="min-h-screen pb-16">
       <StarField />
@@ -82,7 +86,7 @@ const ProfilePage = () => {
               xp={mockUserData.xp}
               nextLevelXp={mockUserData.nextLevelXp}
               streak={mockUserData.streak}
-              subjects={mockUserData.subjects}
+              subjects={studentSubjects?.length || 0}
               completedLessons={mockUserData.completedLessons}
               badges={mockUserData.badges}
             />
@@ -155,19 +159,28 @@ const ProfilePage = () => {
               
               <TabsContent value="progress">
                 <h2 className="text-xl font-bold mb-4">Seus Assuntos</h2>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  {mockSubjects.map((subject) => (
-                    <SubjectCard 
-                      key={subject.id}
-                      id={subject.id}
-                      title={subject.title}
-                      description={subject.description}
-                      completed={subject.completed}
-                      total={subject.total}
-                      icon={subject.icon}
-                    />
-                  ))}
-                </div>
+                {isLoading ? (
+                  <div className="flex justify-center p-6">
+                    <div className="w-8 h-8 rounded-full border-4 border-primary border-t-transparent animate-spin"></div>
+                  </div>
+                ) : isError ? (
+                  <div className="text-center p-6">
+                    <p className="text-destructive mb-4">Não foi possível carregar os assuntos.</p>
+                  </div>
+                ) : studentSubjects && studentSubjects.length > 0 ? (
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    {studentSubjects.map((subject, index) => (
+                      <SubjectCard 
+                        key={subject.subject.id}
+                        {...mapSubjectToCardProps(subject, index)}
+                      />
+                    ))}
+                  </div>
+                ) : (
+                  <div className="text-center p-6 border border-dashed rounded-lg">
+                    <p className="text-muted-foreground">Você ainda não possui assuntos.</p>
+                  </div>
+                )}
               </TabsContent>
             </Tabs>
           </div>

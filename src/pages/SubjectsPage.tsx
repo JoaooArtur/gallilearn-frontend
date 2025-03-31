@@ -7,7 +7,7 @@ import SubjectCard from '@/components/SubjectCard';
 import { Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Pagination, PaginationContent, PaginationItem, PaginationLink, PaginationNext, PaginationPrevious } from '@/components/ui/pagination';
-import { subjectsService, PaginatedResponse, Subject } from '@/services/subjects.service';
+import { subjectsService, StudentSubject } from '@/services/subjects.service';
 import { toast } from 'sonner';
 
 const SubjectsPage = () => {
@@ -15,13 +15,14 @@ const SubjectsPage = () => {
   const limit = 10;
 
   const { data, isLoading, isError } = useQuery({
-    queryKey: ['subjects', page, limit],
-    queryFn: () => subjectsService.getSubjects(page, limit),
-    retry: 1,
-    onError: (error) => {
-      toast.error('Failed to load subjects', {
-        description: error instanceof Error ? error.message : 'Please try again later'
-      });
+    queryKey: ['studentSubjects', page, limit],
+    queryFn: () => subjectsService.getStudentSubjectsPaged(page, limit),
+    meta: {
+      onError: (error: Error) => {
+        toast.error('Failed to load subjects', {
+          description: error.message || 'Please try again later'
+        });
+      }
     }
   });
 
@@ -38,12 +39,12 @@ const SubjectsPage = () => {
   };
 
   // Convert API subjects to the format expected by SubjectCard
-  const mapSubjectToCardProps = (subject: Subject, index: number) => ({
-    id: subject.id,
-    title: subject.name,
-    description: subject.description,
-    completed: 0, // This would come from user progress data in a real app
-    total: 5,     // This would be the total lessons in a real app
+  const mapSubjectToCardProps = (studentSubject: StudentSubject, index: number) => ({
+    id: studentSubject.subject.id,
+    title: studentSubject.subject.name,
+    description: studentSubject.subject.description,
+    completed: studentSubject.lessons.finishedLessons,
+    total: studentSubject.lessons.totalLessons,
     icon: getIconForSubject(index)
   });
 
@@ -76,10 +77,10 @@ const SubjectsPage = () => {
         ) : data && data.items.length > 0 ? (
           <>
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {data.items.map((subject, index) => (
+              {data.items.map((studentSubject, index) => (
                 <SubjectCard 
-                  key={subject.id}
-                  {...mapSubjectToCardProps(subject, index)}
+                  key={studentSubject.subject.id}
+                  {...mapSubjectToCardProps(studentSubject, index)}
                 />
               ))}
             </div>
