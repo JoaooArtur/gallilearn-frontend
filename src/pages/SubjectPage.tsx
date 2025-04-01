@@ -87,7 +87,8 @@ const SubjectPage = () => {
       id: studentLesson.subject.id,
       subjectId: studentLesson.subject.subjectId,
       title: studentLesson.subject.title,
-      questions: studentLesson.subject.questionsCount,
+      content: studentLesson.subject.content,
+      questions: 5, // Fixed to 5 questions as requested
       completed: isFinished,
       locked: !isFinished && index > 0 // Lock lessons after the first one if not completed
     };
@@ -140,7 +141,8 @@ const SubjectPage = () => {
                 id={lesson.id}
                 subjectId={lesson.subjectId}
                 title={lesson.title}
-                questions={5} // Fixed to 5 questions as requested
+                content={lesson.content}
+                questions={lesson.questions}
                 completed={lesson.completed}
                 locked={lesson.locked}
               />
