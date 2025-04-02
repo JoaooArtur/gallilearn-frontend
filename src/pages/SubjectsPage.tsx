@@ -7,7 +7,7 @@ import SubjectCard from '@/components/SubjectCard';
 import { Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Pagination, PaginationContent, PaginationItem, PaginationLink, PaginationNext, PaginationPrevious } from '@/components/ui/pagination';
-import { subjectsService, StudentSubject } from '@/services/subjects.service';
+import { subjectsService } from '@/services/subjects.service';
 import { toast } from 'sonner';
 
 const SubjectsPage = () => {
@@ -39,12 +39,12 @@ const SubjectsPage = () => {
   };
 
   // Convert API subjects to the format expected by SubjectCard
-  const mapSubjectToCardProps = (studentSubject: StudentSubject, index: number) => ({
-    id: studentSubject.subject.id,
-    title: studentSubject.subject.name,
-    description: studentSubject.subject.description,
-    completed: studentSubject.lessons.finishedLessons,
-    total: studentSubject.lessons.totalLessons,
+  const mapSubjectToCardProps = (subject: any, index: number) => ({
+    id: subject.id,
+    title: subject.name,
+    description: subject.description,
+    completed: subject.completedLessonsCount || 0,
+    total: subject.lessonsCount || 0,
     icon: getIconForSubject(index)
   });
 
@@ -74,13 +74,13 @@ const SubjectsPage = () => {
             <p className="text-destructive mb-4">Não foi possível carregar os assuntos.</p>
             <Button onClick={() => window.location.reload()}>Tentar novamente</Button>
           </div>
-        ) : data && data.items.length > 0 ? (
+        ) : data && data.items && data.items.length > 0 ? (
           <>
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {data.items.map((studentSubject, index) => (
+              {data.items.map((subject, index) => (
                 <SubjectCard 
-                  key={studentSubject.subject.id}
-                  {...mapSubjectToCardProps(studentSubject, index)}
+                  key={subject.id}
+                  {...mapSubjectToCardProps(subject, index)}
                 />
               ))}
             </div>

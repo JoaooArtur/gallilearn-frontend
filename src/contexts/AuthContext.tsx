@@ -1,94 +1,65 @@
 
 import React, { createContext, useContext, useState, useEffect } from 'react';
-import { useToast } from '@/hooks/use-toast';
-import { userService } from '@/services/user.service';
-import { apiService } from '@/services/api.service';
 import { useNavigate } from 'react-router-dom';
-import { StudentProfile } from '@/services/user.service';
+import { apiService } from '@/services/api.service';
+import { userService } from '@/services/user.service';
+import { toast } from 'sonner';
 
-interface AuthContextProps {
-  isAuthenticated: boolean;
-  isLoading: boolean;
-  login: () => void;
-  logout: () => void;
-  loginWithCredentials: (email: string, password: string) => Promise<void>;
-  user: StudentProfile | null;
+// User interface
+interface User {
+  id: string;
+  name: string;
+  email: string;
 }
 
-const AuthContext = createContext<AuthContextProps>({
-  isAuthenticated: false,
-  isLoading: false,
-  login: () => {},
-  logout: () => {},
-  loginWithCredentials: async () => {},
-  user: null,
-});
+// Auth context interface
+interface AuthContextType {
+  user: User | null;
+  isAuthenticated: boolean;
+  isLoading: boolean;
+  login: (email: string, password: string) => Promise<void>;
+  logout: () => void;
+}
 
-export const useAuth = () => useContext(AuthContext);
+// Create context
+const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
+// Create provider component
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const { toast } = useToast();
+  const [user, setUser] = useState<User | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
   const navigate = useNavigate();
-  const [isAuthenticated, setIsAuthenticated] = useState(false);
-  const [isLoading, setIsLoading] = useState(false);
-  const [user, setUser] = useState<StudentProfile | null>(null);
 
-  // Check for token in localStorage on mount
+  // Check for existing token on mount
   useEffect(() => {
     const token = localStorage.getItem('auth_token');
+    
     if (token) {
       apiService.setAuthToken(token);
-      fetchUserProfile();
+      userService.setAuthToken(token);
+      
+      // Set basic user info from localStorage if available
+      const userInfo = localStorage.getItem('user_info');
+      if (userInfo) {
+        try {
+          const parsedUser = JSON.parse(userInfo);
+          setUser(parsedUser);
+        } catch (error) {
+          console.error('Failed to parse user info:', error);
+          localStorage.removeItem('user_info');
+          setUser(null);
+        }
+      }
     }
+    
+    setIsLoading(false);
   }, []);
 
-  // Fetch user profile
-  const fetchUserProfile = async () => {
-    setIsLoading(true);
-    try {
-      const studentProfile = await userService.getCurrentStudent();
-      
-      if ('error' in studentProfile) {
-        throw new Error(studentProfile.error);
-      }
-      
-      setUser(studentProfile);
-      setIsAuthenticated(true);
-    } catch (error) {
-      console.error('Error fetching profile:', error);
-      logout();
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  // Simple login function for demo purposes
-  const login = () => {
-    setIsLoading(true);
-    
-    // Simulate login and fetch profile
-    setTimeout(async () => {
-      try {
-        await fetchUserProfile();
-      } catch (error) {
-        console.error('Login error:', error);
-        toast({
-          title: "Erro ao fazer login",
-          description: "Não foi possível autenticar. Tente novamente.",
-          variant: "destructive",
-        });
-      } finally {
-        setIsLoading(false);
-      }
-    }, 1000);
-  };
-
-  // Credential-based login
-  const loginWithCredentials = async (email: string, password: string) => {
+  // Login function
+  const login = async (email: string, password: string) => {
     setIsLoading(true);
     
     try {
-      // Real authentication using the sign-in endpoint
       const response = await fetch(`${apiService.baseUrl}/students/sign-in`, {
         method: 'POST',
         headers: {
@@ -98,36 +69,36 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       });
       
       if (!response.ok) {
-        throw new Error(`Login failed with status: ${response.status}`);
+        throw new Error('Invalid credentials');
       }
       
       const data = await response.json();
       
-      if (!data.token) {
-        throw new Error('No token received from server');
+      if (data && data.token) {
+        // Store token
+        localStorage.setItem('auth_token', data.token);
+        apiService.setAuthToken(data.token);
+        userService.setAuthToken(data.token);
+        
+        // Create basic user object
+        const userData: User = {
+          id: userService.CURRENT_STUDENT_ID, // Using the current student ID as default
+          name: email.split('@')[0], // Using email as temporary name
+          email: email
+        };
+        
+        // Store user info
+        localStorage.setItem('user_info', JSON.stringify(userData));
+        setUser(userData);
+        
+        toast.success('Login successful');
+        navigate('/dashboard');
+      } else {
+        throw new Error('Invalid response from server');
       }
-      
-      // Store token and set it in API service
-      localStorage.setItem('auth_token', data.token);
-      apiService.setAuthToken(data.token);
-      
-      // Fetch user profile with the token
-      await fetchUserProfile();
-      
-      toast({
-        title: "Login bem-sucedido",
-        description: "Bem-vindo de volta ao AstroQuest!",
-      });
-      
-      // Navigate to dashboard after successful login
-      navigate('/dashboard');
     } catch (error) {
-      console.error("Login credential error:", error);
-      toast({
-        title: "Erro ao fazer login",
-        description: "Verifique suas credenciais e tente novamente",
-        variant: "destructive",
-      });
+      const errorMessage = error instanceof Error ? error.message : 'Login failed';
+      toast.error('Login failed', { description: errorMessage });
       throw error;
     } finally {
       setIsLoading(false);
@@ -136,36 +107,42 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   // Logout function
   const logout = () => {
-    // Clear token from localStorage and API service
+    // Clear local storage
     localStorage.removeItem('auth_token');
+    localStorage.removeItem('user_info');
+    
+    // Reset API service
     apiService.setAuthToken('');
     
     // Reset state
-    setIsAuthenticated(false);
     setUser(null);
     
-    // Show toast
-    toast({
-      title: "Logout realizado",
-      description: "Você foi desconectado com sucesso.",
-    });
-    
-    // Navigate to home page
+    // Redirect to login
     navigate('/');
   };
 
   return (
     <AuthContext.Provider
       value={{
-        isAuthenticated,
+        user,
+        isAuthenticated: !!user,
         isLoading,
         login,
         logout,
-        loginWithCredentials,
-        user,
       }}
     >
       {children}
     </AuthContext.Provider>
   );
+};
+
+// Custom hook to use auth context
+export const useAuth = () => {
+  const context = useContext(AuthContext);
+  
+  if (context === undefined) {
+    throw new Error('useAuth must be used within an AuthProvider');
+  }
+  
+  return context;
 };

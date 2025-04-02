@@ -72,6 +72,8 @@ export interface AnswerResponse {
   isCorrect: boolean;
   correctAnswerId: string;
   explanation: string;
+  questionId?: string;
+  answerId?: string;
 }
 
 // Subjects service
@@ -80,14 +82,24 @@ export const subjectsService = {
    * Get all subjects available for the student
    */
   async getSubjects() {
-    return apiService.get<Subject[]>(`/students/${userService.CURRENT_STUDENT_ID}/subjects`);
+    return apiService.get<Subject[]>('/subjects');
   },
 
   /**
    * Get student subjects with paging
    */
   async getStudentSubjectsPaged(page: number = 1, pageSize: number = 10) {
-    return apiService.get<StudentSubject[]>(`/students/${userService.CURRENT_STUDENT_ID}/subjects?page=${page}&pageSize=${pageSize}`);
+    return apiService.get<{
+      items: StudentSubject[],
+      page: {
+        number: number,
+        size: number,
+        totalPages: number,
+        totalItems: number,
+        hasPrevious: boolean,
+        hasNext: boolean
+      }
+    }>(`/subjects?page=${page}&pageSize=${pageSize}`);
   },
 
   /**
@@ -95,7 +107,7 @@ export const subjectsService = {
    * @param subjectId Subject ID
    */
   async getSubject(subjectId: string) {
-    return apiService.get<Subject>(`/students/${userService.CURRENT_STUDENT_ID}/subjects/${subjectId}`);
+    return apiService.get<Subject>(`/subjects/${subjectId}`);
   },
 
   /**
@@ -110,14 +122,14 @@ export const subjectsService = {
    * @param subjectId Subject ID
    */
   async getLessons(subjectId: string) {
-    return apiService.get<Lesson[]>(`/students/${userService.CURRENT_STUDENT_ID}/subjects/${subjectId}/lessons`);
+    return apiService.get<Lesson[]>(`/subjects/${subjectId}/lessons`);
   },
 
   /**
    * Get student lessons by subject ID
    */
   async getStudentLessonsBySubjectId(subjectId: string) {
-    return apiService.get<StudentLesson[]>(`/students/${userService.CURRENT_STUDENT_ID}/subjects/${subjectId}/lessons`);
+    return apiService.get<StudentLesson[]>(`/subjects/${subjectId}/lessons`);
   },
 
   /**
@@ -126,7 +138,7 @@ export const subjectsService = {
    * @param lessonId Lesson ID
    */
   async getLesson(subjectId: string, lessonId: string) {
-    return apiService.get<Lesson>(`/students/${userService.CURRENT_STUDENT_ID}/subjects/${subjectId}/lessons/${lessonId}`);
+    return apiService.get<Lesson>(`/subjects/${subjectId}/lessons/${lessonId}`);
   },
 
   /**
@@ -135,7 +147,7 @@ export const subjectsService = {
    * @param lessonId Lesson ID
    */
   async completeLesson(subjectId: string, lessonId: string) {
-    return apiService.post(`/students/${userService.CURRENT_STUDENT_ID}/subjects/${subjectId}/lessons/${lessonId}/complete`, {});
+    return apiService.post(`/subjects/${subjectId}/lessons/${lessonId}/complete`, {});
   },
 
   /**
@@ -151,28 +163,28 @@ export const subjectsService = {
     quizId: string,
     answers: AnswerSubmission[]
   ) {
-    return apiService.post(`/students/${userService.CURRENT_STUDENT_ID}/subjects/${subjectId}/lessons/${lessonId}/quizzes/${quizId}/submit`, { answers });
+    return apiService.post(`/subjects/${subjectId}/lessons/${lessonId}/quizzes/${quizId}/submit`, { answers });
   },
 
   /**
    * Get student subjects
    */
   async getStudentSubjects() {
-    return apiService.get<StudentSubject[]>(`/students/${userService.CURRENT_STUDENT_ID}/subjects`);
+    return apiService.get<StudentSubject[]>('/subjects');
   },
 
   /**
    * Get random questions by lesson ID
    */
   async getRandomQuestionsByLessonId(subjectId: string, lessonId: string, count: number = 5) {
-    return apiService.get<Question[]>(`/students/${userService.CURRENT_STUDENT_ID}/subjects/${subjectId}/lessons/${lessonId}/questions/random?count=${count}`);
+    return apiService.get<Question[]>(`/subjects/${subjectId}/lessons/${lessonId}/questions/random?count=${count}`);
   },
 
   /**
    * Start a lesson attempt
    */
   async startLessonAttempt(subjectId: string, lessonId: string) {
-    return apiService.post(`/students/${userService.CURRENT_STUDENT_ID}/subjects/${subjectId}/lessons/${lessonId}/attempt`, {});
+    return apiService.post<{ id: string }>(`/subjects/${subjectId}/lessons/${lessonId}/attempt`, {});
   },
 
   /**

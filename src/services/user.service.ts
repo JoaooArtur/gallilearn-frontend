@@ -76,9 +76,9 @@ export const userService = {
   /**
    * Search for students by name
    */
-  async searchStudents(name: string) {
+  async searchStudents(name: string): Promise<StudentSearchResult[]> {
     if (!name || name.length < 2) {
-      return { data: [], error: null };
+      return [];
     }
     
     return await apiService.get<StudentSearchResult[]>(`/students?Name=${encodeURIComponent(name)}`);
