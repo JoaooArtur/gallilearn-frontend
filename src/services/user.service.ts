@@ -42,13 +42,16 @@ export interface StudentSearchResult {
   email: string;
 }
 
-// Current student ID
+// Current student ID - Expose this for other services to use
 export const CURRENT_STUDENT_ID = '2598dd79-dc06-4140-854f-24da3b87a8c7';
 
 /**
  * Service for user-related API calls
  */
 export const userService = {
+  // Make CURRENT_STUDENT_ID accessible via the service
+  CURRENT_STUDENT_ID,
+  
   /**
    * Get current student profile
    */
