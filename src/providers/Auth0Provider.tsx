@@ -24,6 +24,7 @@ export const Auth0ProviderWithNavigate = ({ children }: Auth0ProviderWithNavigat
       authorizationParams={{
         redirect_uri: redirectUri,
         connection: "GallilearnStudent",
+        response_type: "token"
       }}
       onRedirectCallback={onRedirectCallback}
     >
