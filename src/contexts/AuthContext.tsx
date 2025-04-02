@@ -2,6 +2,7 @@
 import React, { createContext, useContext, useState } from 'react';
 import { useToast } from '@/hooks/use-toast';
 import { userService } from '@/services/user.service';
+import { StudentProfile } from '@/services/user.service';
 
 interface AuthContextProps {
   isAuthenticated: boolean;
@@ -9,7 +10,7 @@ interface AuthContextProps {
   login: () => void;
   logout: () => void;
   loginWithCredentials: (email: string, password: string) => Promise<void>;
-  user: any;
+  user: StudentProfile | null;
 }
 
 const AuthContext = createContext<AuthContextProps>({
@@ -27,7 +28,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const { toast } = useToast();
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
-  const [user, setUser] = useState<any>(null);
+  const [user, setUser] = useState<StudentProfile | null>(null);
 
   // Simple login function
   const login = () => {
@@ -38,11 +39,11 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       try {
         const studentProfile = await userService.getCurrentStudent();
         
-        if (!studentProfile.error) {
-          setUser(studentProfile.data);
+        if (studentProfile) {
+          setUser(studentProfile);
           setIsAuthenticated(true);
         } else {
-          throw new Error(studentProfile.error as string);
+          throw new Error("Failed to get student profile");
         }
       } catch (error) {
         console.error('Login error:', error);
@@ -66,11 +67,15 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       if (email && password) {
         const studentProfile = await userService.getCurrentStudent();
         
-        if (!studentProfile.error) {
-          setUser(studentProfile.data);
+        if (studentProfile) {
+          setUser(studentProfile);
           setIsAuthenticated(true);
+          toast({
+            title: "Login bem-sucedido",
+            description: "Bem-vindo de volta ao AstroQuest!",
+          });
         } else {
-          throw new Error(studentProfile.error as string);
+          throw new Error("Failed to get student profile");
         }
       } else {
         throw new Error("Email e senha são obrigatórios");
@@ -92,6 +97,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const logout = () => {
     setIsAuthenticated(false);
     setUser(null);
+    toast({
+      title: "Logout realizado",
+      description: "Você foi desconectado com sucesso.",
+    });
   };
 
   return (

@@ -45,7 +45,12 @@ export const apiService = {
       }
 
       const data = await response.json();
-      return { data, error: null };
+      // When we get an array, we need to return it directly
+      if (Array.isArray(data)) {
+        return data as T;
+      }
+      // For single objects, return as is
+      return data as T;
     } catch (error) {
       console.error('API GET error:', error);
       return { data: null, error: (error as Error).message };
@@ -70,7 +75,7 @@ export const apiService = {
       }
 
       const data = await response.json();
-      return { data, error: null };
+      return data as T;
     } catch (error) {
       console.error('API POST error:', error);
       return { data: null, error: (error as Error).message };
@@ -95,7 +100,7 @@ export const apiService = {
       }
 
       const data = await response.json();
-      return { data, error: null };
+      return data as T;
     } catch (error) {
       console.error('API PUT error:', error);
       return { data: null, error: (error as Error).message };
@@ -118,7 +123,7 @@ export const apiService = {
       }
 
       const data = await response.json();
-      return { data, error: null };
+      return data as T;
     } catch (error) {
       console.error('API DELETE error:', error);
       return { data: null, error: (error as Error).message };
