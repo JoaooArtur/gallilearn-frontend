@@ -33,7 +33,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     user: auth0User,
     isLoading,
     getAccessTokenSilently,
-    loginWithPopup,
   } = useAuth0();
   const [user, setUser] = useState<any>(null);
 
@@ -64,21 +63,17 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   }, [isAuthenticated, auth0User, getAccessTokenSilently, toast]);
 
   const login = () => {
-    loginWithRedirect();
+    loginWithRedirect({
+      authorizationParams: {
+        connection: 'GallilearnStudent'
+      }
+    });
   };
 
+  // This function is maintained for API compatibility but now just uses the redirect flow
   const loginWithCredentials = async (email: string, password: string) => {
     try {
-      // Use the loginWithPopup method with credentials
-      await loginWithPopup({
-        authorizationParams: {
-          connection: 'Username-Password-Authentication',
-          login_hint: email,
-        },
-        popup: false,
-      });
-      
-      // The useEffect above will handle token and profile fetching after successful login
+      login();
     } catch (error) {
       console.error("Login credential error:", error);
       toast({

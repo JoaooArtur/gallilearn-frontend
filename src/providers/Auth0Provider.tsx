@@ -23,6 +23,7 @@ export const Auth0ProviderWithNavigate = ({ children }: Auth0ProviderWithNavigat
       clientId={clientId}
       authorizationParams={{
         redirect_uri: redirectUri,
+        connection: "GallilearnStudent",
       }}
       onRedirectCallback={onRedirectCallback}
     >
