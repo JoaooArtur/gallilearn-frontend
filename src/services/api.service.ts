@@ -1,127 +1,146 @@
 
+import { API_BASE_URL } from '@/constants/api';
+
 /**
- * API Service for making HTTP requests
+ * Generic API response interface
+ */
+interface ApiResponse<T> {
+  data?: T;
+  error?: string;
+  status: number;
+}
+
+/**
+ * Service to handle API requests
  */
 export const apiService = {
-  baseUrl: 'https://localhost:7171/api/v1',
-  authToken: '',
-
   /**
-   * Set the authentication token for API requests
-   * @param token The authentication token
+   * Generic GET request
    */
-  setAuthToken(token: string) {
-    this.authToken = token;
-  },
-
-  /**
-   * Get default headers for API requests
-   */
-  getHeaders() {
-    const headers: Record<string, string> = {
-      'Content-Type': 'application/json',
-    };
-
-    if (this.authToken) {
-      headers['Authorization'] = `Bearer ${this.authToken}`;
-    }
-
-    return headers;
-  },
-
-  /**
-   * Make a GET request
-   * @param endpoint API endpoint
-   */
-  async get<T>(endpoint: string): Promise<T> {
+  async get<T>(endpoint: string): Promise<ApiResponse<T>> {
     try {
-      const response = await fetch(`${this.baseUrl}${endpoint}`, {
+      const response = await fetch(`${API_BASE_URL}${endpoint}`, {
         method: 'GET',
-        headers: this.getHeaders(),
+        headers: {
+          'Content-Type': 'application/json',
+        },
       });
-
+      
+      const status = response.status;
+      
       if (!response.ok) {
-        throw new Error(`HTTP error ${response.status}`);
+        return { 
+          error: `Error ${status}: ${response.statusText}`, 
+          status 
+        };
       }
-
+      
       const data = await response.json();
-      return data as T;
+      return { data, status };
     } catch (error) {
-      console.error('API GET error:', error);
-      throw error;
+      console.error('API GET request failed:', error);
+      return { 
+        error: error instanceof Error ? error.message : 'Unknown error', 
+        status: 500 
+      };
     }
   },
 
   /**
-   * Make a POST request
-   * @param endpoint API endpoint
-   * @param body Request body
+   * Generic POST request
    */
-  async post<T>(endpoint: string, body: any): Promise<T> {
+  async post<T, R>(endpoint: string, body: T): Promise<ApiResponse<R>> {
     try {
-      const response = await fetch(`${this.baseUrl}${endpoint}`, {
+      const response = await fetch(`${API_BASE_URL}${endpoint}`, {
         method: 'POST',
-        headers: this.getHeaders(),
+        headers: {
+          'Content-Type': 'application/json',
+        },
         body: JSON.stringify(body),
       });
-
+      
+      const status = response.status;
+      
       if (!response.ok) {
-        throw new Error(`HTTP error ${response.status}`);
+        return { 
+          error: `Error ${status}: ${response.statusText}`, 
+          status 
+        };
       }
-
+      
       const data = await response.json();
-      return data as T;
+      return { data, status };
     } catch (error) {
-      console.error('API POST error:', error);
-      throw error;
+      console.error('API POST request failed:', error);
+      return { 
+        error: error instanceof Error ? error.message : 'Unknown error', 
+        status: 500 
+      };
     }
   },
 
   /**
-   * Make a PUT request
-   * @param endpoint API endpoint
-   * @param body Request body
+   * Generic PUT request
    */
-  async put<T>(endpoint: string, body: any): Promise<T> {
+  async put<T, R>(endpoint: string, body: T): Promise<ApiResponse<R>> {
     try {
-      const response = await fetch(`${this.baseUrl}${endpoint}`, {
+      const response = await fetch(`${API_BASE_URL}${endpoint}`, {
         method: 'PUT',
-        headers: this.getHeaders(),
+        headers: {
+          'Content-Type': 'application/json',
+        },
         body: JSON.stringify(body),
       });
-
+      
+      const status = response.status;
+      
       if (!response.ok) {
-        throw new Error(`HTTP error ${response.status}`);
+        return { 
+          error: `Error ${status}: ${response.statusText}`, 
+          status 
+        };
       }
-
+      
       const data = await response.json();
-      return data as T;
+      return { data, status };
     } catch (error) {
-      console.error('API PUT error:', error);
-      throw error;
+      console.error('API PUT request failed:', error);
+      return { 
+        error: error instanceof Error ? error.message : 'Unknown error', 
+        status: 500 
+      };
     }
   },
 
   /**
-   * Make a DELETE request
-   * @param endpoint API endpoint
+   * Generic DELETE request
    */
-  async delete<T>(endpoint: string): Promise<T> {
+  async delete<T>(endpoint: string): Promise<ApiResponse<T>> {
     try {
-      const response = await fetch(`${this.baseUrl}${endpoint}`, {
+      const response = await fetch(`${API_BASE_URL}${endpoint}`, {
         method: 'DELETE',
-        headers: this.getHeaders(),
+        headers: {
+          'Content-Type': 'application/json',
+        },
       });
-
+      
+      const status = response.status;
+      
       if (!response.ok) {
-        throw new Error(`HTTP error ${response.status}`);
+        return { 
+          error: `Error ${status}: ${response.statusText}`, 
+          status 
+        };
       }
-
+      
       const data = await response.json();
-      return data as T;
+      return { data, status };
     } catch (error) {
-      console.error('API DELETE error:', error);
-      throw error;
+      console.error('API DELETE request failed:', error);
+      return { 
+        error: error instanceof Error ? error.message : 'Unknown error', 
+        status: 500 
+      };
     }
   },
 };

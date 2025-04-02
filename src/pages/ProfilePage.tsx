@@ -1,28 +1,85 @@
 
 import React from 'react';
+import { useQuery } from '@tanstack/react-query';
 import NavBar from '@/components/NavBar';
 import StarField from '@/components/StarField';
-import { Card, CardContent, CardHeader } from "@/components/ui/card";
-import { useAuth } from '@/contexts/AuthContext';
-import { Link } from 'react-router-dom';
 import UserProfile from '@/components/UserProfile';
+import SubjectCard from '@/components/SubjectCard';
+import { Link } from 'react-router-dom';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { subjectsService } from '@/services/subjects.service';
+import { userService } from '@/services/user.service';
+import { toast } from 'sonner';
+
+// Dados de exemplo para estatísticas - seriam idealmente de API no futuro
+const mockStats = {
+  questionsAnswered: 35,
+  correctAnswers: 28,
+  accuracy: 80,
+  averageTime: 25,
+  bestSubject: 'Introdução à Astrofísica',
+};
+
+// Badges mockadas - seriam idealmente de API no futuro
+const mockBadges = [
+  { id: '1', name: 'Primeiro login', icon: '🚀' },
+  { id: '2', name: '3 dias seguidos', icon: '🔥' },
+  { id: '3', name: 'Completou primeira lição', icon: '📚' },
+];
 
 const ProfilePage = () => {
-  const { user } = useAuth();
-  
-  if (!user) {
-    return (
-      <div className="min-h-screen">
-        <StarField />
-        <NavBar />
-        <main className="container pt-24 text-center">
-          <p>Você precisa estar logado para acessar esta página.</p>
-          <Link to="/" className="text-primary hover:underline">Voltar para login</Link>
-        </main>
-      </div>
-    );
-  }
-  
+  // Get student profile data
+  const { data: studentProfile, isLoading: isLoadingProfile } = useQuery({
+    queryKey: ['studentProfile'],
+    queryFn: () => userService.getCurrentStudent(),
+    meta: {
+      onError: (error: Error) => {
+        toast.error('Failed to load profile', {
+          description: error.message || 'Please try again later'
+        });
+      }
+    }
+  });
+
+  // Get student subjects for profile page
+  const { data: studentSubjects, isLoading: isLoadingSubjects, isError } = useQuery({
+    queryKey: ['profileSubjects'],
+    queryFn: () => subjectsService.getStudentSubjects(),
+    meta: {
+      onError: (error: Error) => {
+        toast.error('Failed to load subjects', {
+          description: error.message || 'Please try again later'
+        });
+      }
+    }
+  });
+
+  // Mock icons for subjects
+  const getIconForSubject = (index: number) => {
+    const icons = ['🌌', '🪐', '✨', '🔭', '⚡', '🌍'];
+    return icons[index % icons.length];
+  };
+
+  // Convert API subjects to the format expected by SubjectCard
+  const mapSubjectToCardProps = (studentSubject: any, index: number) => ({
+    id: studentSubject.subject.id,
+    title: studentSubject.subject.name,
+    description: studentSubject.subject.description,
+    completed: studentSubject.lessons.finishedLessons,
+    total: studentSubject.lessons.totalLessons,
+    icon: getIconForSubject(index)
+  });
+
+  const isLoading = isLoadingProfile || isLoadingSubjects;
+
+  // Extract username from email
+  const getUsername = (email: string) => {
+    if (!email) return '';
+    const parts = email.split('@');
+    return parts[0] || '';
+  };
+
   return (
     <div className="min-h-screen pb-16">
       <StarField />
@@ -33,87 +90,116 @@ const ProfilePage = () => {
           <Link to="/dashboard" className="text-muted-foreground hover:text-foreground transition-colors mb-4 inline-block">
             ← Voltar para Dashboard
           </Link>
-          
-          <h1 className="text-3xl font-bold text-center mb-2">Seu Perfil</h1>
-          <p className="text-center text-muted-foreground mb-8">
-            Gerencie suas informações pessoais e acompanhe seu progresso
-          </p>
         </div>
         
-        <div className="grid grid-cols-1 md:grid-cols-12 gap-6">
-          <div className="md:col-span-4">
-            <Card>
-              <CardHeader className="pb-0">
-                <h2 className="text-xl font-semibold">Suas Informações</h2>
-              </CardHeader>
-              <CardContent>
-                <UserProfile 
-                  name={user.name}
-                  email={user.email}
-                  level={5}
-                  streak={7}
-                  completedLessons={12}
-                  xp={750}
-                  nextLevelXp={1000}
-                  badges={[
-                    { id: '1', name: 'Iniciante', icon: '🔭' },
-                    { id: '2', name: '7 Dias', icon: '🔥' }
-                  ]}
-                />
-              </CardContent>
-            </Card>
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+          <div>
+            {studentProfile && (
+              <UserProfile 
+                name={studentProfile.name}
+                username={getUsername(studentProfile.email)}
+                level={studentProfile.level}
+                xp={studentProfile.xp}
+                nextLevelXp={studentProfile.nextLevelXPNeeded}
+                streak={studentProfile.daysStreak}
+                subjects={studentSubjects?.length || 0}
+                completedLessons={0} // Could be calculated from subjects data in the future
+                badges={mockBadges}
+              />
+            )}
           </div>
           
-          <div className="md:col-span-8">
-            <Card className="mb-6">
-              <CardHeader className="pb-0">
-                <h2 className="text-xl font-semibold">Estatísticas</h2>
-              </CardHeader>
-              <CardContent>
-                <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 py-4">
-                  <div className="text-center p-4 bg-muted/50 rounded-lg">
-                    <p className="text-3xl font-bold text-primary">7</p>
-                    <p className="text-sm text-muted-foreground">Dias consecutivos</p>
+          <div className="lg:col-span-2">
+            <Tabs defaultValue="stats">
+              <TabsList className="grid w-full grid-cols-2 mb-8">
+                <TabsTrigger value="stats">Estatísticas</TabsTrigger>
+                <TabsTrigger value="progress">Progresso</TabsTrigger>
+              </TabsList>
+              
+              <TabsContent value="stats">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
+                  <Card>
+                    <CardHeader>
+                      <CardTitle className="text-lg">Perguntas</CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                      <div className="grid grid-cols-2 gap-4">
+                        <div className="text-center">
+                          <p className="text-2xl font-bold">{mockStats.questionsAnswered}</p>
+                          <p className="text-sm text-muted-foreground">Respondidas</p>
+                        </div>
+                        <div className="text-center">
+                          <p className="text-2xl font-bold">{mockStats.correctAnswers}</p>
+                          <p className="text-sm text-muted-foreground">Corretas</p>
+                        </div>
+                      </div>
+                    </CardContent>
+                  </Card>
+                  
+                  <Card>
+                    <CardHeader>
+                      <CardTitle className="text-lg">Precisão</CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                      <div className="text-center">
+                        <p className="text-3xl font-bold">{mockStats.accuracy}%</p>
+                        <p className="text-sm text-muted-foreground">Taxa de acerto</p>
+                      </div>
+                    </CardContent>
+                  </Card>
+                  
+                  <Card>
+                    <CardHeader>
+                      <CardTitle className="text-lg">Tempo Médio</CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                      <div className="text-center">
+                        <p className="text-3xl font-bold">{mockStats.averageTime}s</p>
+                        <p className="text-sm text-muted-foreground">Por pergunta</p>
+                      </div>
+                    </CardContent>
+                  </Card>
+                  
+                  <Card>
+                    <CardHeader>
+                      <CardTitle className="text-lg">Melhor Assunto</CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                      <div className="text-center">
+                        <p className="font-medium">{mockStats.bestSubject}</p>
+                        <p className="text-sm text-muted-foreground">Taxa de acerto mais alta</p>
+                      </div>
+                    </CardContent>
+                  </Card>
+                </div>
+              </TabsContent>
+              
+              <TabsContent value="progress">
+                <h2 className="text-xl font-bold mb-4">Seus Assuntos</h2>
+                {isLoading ? (
+                  <div className="flex justify-center p-6">
+                    <div className="w-8 h-8 rounded-full border-4 border-primary border-t-transparent animate-spin"></div>
                   </div>
-                  <div className="text-center p-4 bg-muted/50 rounded-lg">
-                    <p className="text-3xl font-bold text-primary">12</p>
-                    <p className="text-sm text-muted-foreground">Lições completadas</p>
+                ) : isError ? (
+                  <div className="text-center p-6">
+                    <p className="text-destructive mb-4">Não foi possível carregar os assuntos.</p>
                   </div>
-                  <div className="text-center p-4 bg-muted/50 rounded-lg">
-                    <p className="text-3xl font-bold text-primary">1250</p>
-                    <p className="text-sm text-muted-foreground">Pontos XP</p>
+                ) : studentSubjects && studentSubjects.length > 0 ? (
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    {studentSubjects.map((subject, index) => (
+                      <SubjectCard 
+                        key={subject.subject.id}
+                        {...mapSubjectToCardProps(subject, index)}
+                      />
+                    ))}
                   </div>
-                </div>
-              </CardContent>
-            </Card>
-            
-            <Card>
-              <CardHeader className="pb-0">
-                <h2 className="text-xl font-semibold">Configurações</h2>
-              </CardHeader>
-              <CardContent className="space-y-6">
-                <div className="space-y-2">
-                  <p className="font-medium">Notificações</p>
-                  <p className="text-sm text-muted-foreground">
-                    Gerencie como e quando você recebe notificações
-                  </p>
-                </div>
-                
-                <div className="space-y-2">
-                  <p className="font-medium">Privacidade</p>
-                  <p className="text-sm text-muted-foreground">
-                    Controle quem pode ver seu perfil e progresso
-                  </p>
-                </div>
-                
-                <div className="space-y-2">
-                  <p className="font-medium">Conta</p>
-                  <p className="text-sm text-muted-foreground">
-                    Gerencie as configurações da sua conta
-                  </p>
-                </div>
-              </CardContent>
-            </Card>
+                ) : (
+                  <div className="text-center p-6 border border-dashed rounded-lg">
+                    <p className="text-muted-foreground">Você ainda não possui assuntos.</p>
+                  </div>
+                )}
+              </TabsContent>
+            </Tabs>
           </div>
         </div>
       </main>

@@ -44,9 +44,7 @@ const LessonPage = () => {
       return subjectsService.startLessonAttempt(subjectId, lessonId);
     },
     onSuccess: (data) => {
-      if (data && typeof data === 'object' && 'id' in data) {
-        setAttemptId(data.id as string);
-      }
+      setAttemptId(data.id);
     },
     onError: (error) => {
       console.error('Failed to start lesson attempt:', error);
@@ -61,18 +59,11 @@ const LessonPage = () => {
   // Submit answer mutation
   const submitAnswerMutation = useMutation({
     mutationFn: ({ questionId, answerId }: { questionId: string; answerId: string }) => {
-      if (!attemptId) return Promise.reject('Missing attempt ID');
-      return subjectsService.submitAnswer(attemptId, questionId, answerId);
+      if (!subjectId || !lessonId || !attemptId) return Promise.reject('Missing parameters');
+      return subjectsService.submitAnswer(subjectId, lessonId, attemptId, questionId, answerId);
     },
     onSuccess: (data) => {
-      // Add questionId and answerId to the response for tracking
-      const enhancedResponse = {
-        ...data,
-        questionId: submitAnswerMutation.variables?.questionId,
-        answerId: submitAnswerMutation.variables?.answerId
-      };
-      
-      setAnswerResults(prev => [...prev, enhancedResponse]);
+      setAnswerResults(prev => [...prev, data]);
       if (data.isCorrect) {
         setCorrectAnswers(prev => prev + 1);
       }
@@ -192,7 +183,7 @@ const LessonPage = () => {
         {!completed ? (
           <QuizQuestion 
             question={currentQuestion.text}
-            options={currentQuestion.options.map(option => ({ id: option.id, text: option.text }))}
+            options={currentQuestion.answers.map(answer => ({ id: answer.id, text: answer.text }))}
             correctOptionId={currentQuestionResult?.correctAnswerId || ''}
             selectedOptionId={currentQuestionResult?.answerId || ''}
             hasSubmitted={!!currentQuestionResult}

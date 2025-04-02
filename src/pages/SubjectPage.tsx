@@ -1,5 +1,5 @@
 
-import React from 'react';
+import React, { useState } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import NavBar from '@/components/NavBar';
@@ -9,7 +9,10 @@ import ProgressBar from '@/components/ProgressBar';
 import { Button } from '@/components/ui/button';
 import { 
   Card, 
-  CardContent
+  CardContent, 
+  CardDescription, 
+  CardHeader, 
+  CardTitle 
 } from '@/components/ui/card';
 import { Loader2 } from 'lucide-react';
 import { subjectsService, StudentLesson, Subject } from '@/services/subjects.service';
@@ -31,7 +34,7 @@ const SubjectPage = () => {
   
   // Fetch student lessons for the subject
   const {
-    data: lessons,
+    data: studentLessons,
     isLoading: lessonsLoading,
     error: lessonsError
   } = useQuery({
@@ -66,7 +69,7 @@ const SubjectPage = () => {
     );
   }
   
-  if (!subject || !lessons) {
+  if (!subject || !studentLessons) {
     return (
       <div className="min-h-screen flex flex-col items-center justify-center">
         <h1 className="text-2xl mb-4">Assunto não encontrado</h1>
@@ -78,15 +81,16 @@ const SubjectPage = () => {
   }
   
   // Process lessons data for UI display
-  const processedLessons = lessons.map((lesson, index) => {
+  const processedLessons = studentLessons.map((studentLesson, index) => {
+    const isFinished = studentLesson.status.name === 'Finished';
     return {
-      id: lesson.id,
-      subjectId: subjectId || '',
-      title: lesson.title,
-      content: lesson.description,
+      id: studentLesson.subject.id,
+      subjectId: studentLesson.subject.subjectId,
+      title: studentLesson.subject.title,
+      content: studentLesson.subject.content,
       questions: 5, // Fixed to 5 questions as requested
-      completed: lesson.completed,
-      locked: !lesson.completed && index > 0 // Lock lessons after the first one if not completed
+      completed: isFinished,
+      locked: !isFinished && index > 0 // Lock lessons after the first one if not completed
     };
   });
   

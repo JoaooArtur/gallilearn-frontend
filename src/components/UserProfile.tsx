@@ -7,32 +7,28 @@ import ProgressBar from './ProgressBar';
 
 interface UserProfileProps {
   name: string;
-  email?: string;
-  username?: string;
+  username: string;
   avatar?: string;
   level: number;
-  xp?: number;
-  nextLevelXp?: number;
-  progress?: number;
+  xp: number;
+  nextLevelXp: number;
   streak: number;
-  subjects?: number;
-  completedLessons?: number;
-  badges?: { id: string; name: string; icon: string }[];
+  subjects: number;
+  completedLessons: number;
+  badges: { id: string; name: string; icon: string }[];
 }
 
 const UserProfile: React.FC<UserProfileProps> = ({
   name,
-  email,
   username,
   avatar,
   level,
-  xp = 0,
-  nextLevelXp = 100,
-  progress = 0,
+  xp,
+  nextLevelXp,
   streak,
-  subjects = 0,
-  completedLessons = 0,
-  badges = []
+  subjects,
+  completedLessons,
+  badges
 }) => {
   return (
     <Card className="overflow-hidden">
@@ -48,8 +44,7 @@ const UserProfile: React.FC<UserProfileProps> = ({
         </div>
         <div className="pt-16">
           <CardTitle>{name}</CardTitle>
-          {username && <p className="text-muted-foreground">@{username}</p>}
-          {email && <p className="text-muted-foreground text-sm">{email}</p>}
+          <p className="text-muted-foreground">@{username}</p>
         </div>
       </CardHeader>
       
@@ -79,18 +74,16 @@ const UserProfile: React.FC<UserProfileProps> = ({
           <ProgressBar value={xp} max={nextLevelXp} />
         </div>
         
-        {badges.length > 0 && (
-          <div className="space-y-2">
-            <h3 className="font-medium">Conquistas</h3>
-            <div className="flex flex-wrap gap-2">
-              {badges.map((badge) => (
-                <Badge key={badge.id} variant="outline" className="px-3 py-1 bg-muted/30">
-                  <span className="mr-1">{badge.icon}</span> {badge.name}
-                </Badge>
-              ))}
-            </div>
+        <div className="space-y-2">
+          <h3 className="font-medium">Conquistas</h3>
+          <div className="flex flex-wrap gap-2">
+            {badges.map((badge) => (
+              <Badge key={badge.id} variant="outline" className="px-3 py-1 bg-muted/30">
+                <span className="mr-1">{badge.icon}</span> {badge.name}
+              </Badge>
+            ))}
           </div>
-        )}
+        </div>
       </CardContent>
     </Card>
   );
