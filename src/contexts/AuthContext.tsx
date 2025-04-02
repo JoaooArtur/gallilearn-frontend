@@ -1,6 +1,5 @@
 
-import React, { createContext, useContext, useEffect, useState } from 'react';
-import { useAuth0 } from '@auth0/auth0-react';
+import React, { createContext, useContext, useState } from 'react';
 import { useToast } from '@/hooks/use-toast';
 import { userService } from '@/services/user.service';
 
@@ -15,7 +14,7 @@ interface AuthContextProps {
 
 const AuthContext = createContext<AuthContextProps>({
   isAuthenticated: false,
-  isLoading: true,
+  isLoading: false,
   login: () => {},
   logout: () => {},
   loginWithCredentials: async () => {},
@@ -26,61 +25,56 @@ export const useAuth = () => useContext(AuthContext);
 
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const { toast } = useToast();
-  const {
-    isAuthenticated,
-    loginWithRedirect,
-    logout: auth0Logout,
-    user: auth0User,
-    isLoading,
-    getAccessTokenSilently,
-  } = useAuth0();
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
   const [user, setUser] = useState<any>(null);
 
-  // NextAuth-style token and session management
-  useEffect(() => {
-    if (isAuthenticated && auth0User) {
-      const updateUserAndToken = async () => {
-        try {
-          // Get token and set it in the API service
-          const token = await getAccessTokenSilently();
-          userService.setAuthToken(token);
-          
-          // Fetch user profile
-          const studentProfile = await userService.getCurrentStudent();
-          if (!studentProfile.error) {
-            setUser(studentProfile.data);
-          } else {
-            throw new Error(studentProfile.error as string);
-          }
-        } catch (error) {
-          console.error('Failed to fetch user profile or token:', error);
-          toast({
-            title: "Erro",
-            description: "Falha ao carregar perfil do usuário",
-            variant: "destructive",
-          });
-        }
-      };
-      
-      updateUserAndToken();
-    }
-  }, [isAuthenticated, auth0User, getAccessTokenSilently, toast]);
-
-  // NextAuth-style signin function
+  // Simple login function
   const login = () => {
-    loginWithRedirect({
-      authorizationParams: {
-        connection: 'GallilearnStudent',
-        // Use callbackUrl following NextAuth pattern
-        redirect_uri: window.location.origin,
+    setIsLoading(true);
+    
+    // Simulate login and fetch profile
+    setTimeout(async () => {
+      try {
+        const studentProfile = await userService.getCurrentStudent();
+        
+        if (!studentProfile.error) {
+          setUser(studentProfile.data);
+          setIsAuthenticated(true);
+        } else {
+          throw new Error(studentProfile.error as string);
+        }
+      } catch (error) {
+        console.error('Login error:', error);
+        toast({
+          title: "Erro ao fazer login",
+          description: "Não foi possível autenticar. Tente novamente.",
+          variant: "destructive",
+        });
+      } finally {
+        setIsLoading(false);
       }
-    });
+    }, 1000);
   };
 
-  // This function is maintained for API compatibility but now just uses the redirect flow
+  // Credential-based login
   const loginWithCredentials = async (email: string, password: string) => {
+    setIsLoading(true);
+    
     try {
-      login();
+      // Simulate credential validation
+      if (email && password) {
+        const studentProfile = await userService.getCurrentStudent();
+        
+        if (!studentProfile.error) {
+          setUser(studentProfile.data);
+          setIsAuthenticated(true);
+        } else {
+          throw new Error(studentProfile.error as string);
+        }
+      } else {
+        throw new Error("Email e senha são obrigatórios");
+      }
     } catch (error) {
       console.error("Login credential error:", error);
       toast({
@@ -89,16 +83,14 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         variant: "destructive",
       });
       throw error;
+    } finally {
+      setIsLoading(false);
     }
   };
 
-  // NextAuth-style signout
+  // Simple logout
   const logout = () => {
-    auth0Logout({ 
-      logoutParams: {
-        returnTo: window.location.origin,
-      }
-    });
+    setIsAuthenticated(false);
     setUser(null);
   };
 
@@ -110,7 +102,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         login,
         logout,
         loginWithCredentials,
-        user: user || auth0User,
+        user,
       }}
     >
       {children}

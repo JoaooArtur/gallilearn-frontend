@@ -8,7 +8,6 @@ import { LogIn } from 'lucide-react';
 const AuthForm = () => {
   const { login, isLoading } = useAuth();
 
-  // NextAuth-style signin handler
   const handleLogin = (e: React.FormEvent) => {
     e.preventDefault();
     login();
@@ -29,7 +28,7 @@ const AuthForm = () => {
             size="lg"
           >
             <LogIn className="mr-2 h-4 w-4" />
-            {isLoading ? "Conectando..." : "Entrar com Auth0"}
+            {isLoading ? "Conectando..." : "Entrar"}
           </Button>
         </form>
       </CardContent>
