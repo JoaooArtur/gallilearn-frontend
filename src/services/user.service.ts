@@ -55,61 +55,33 @@ export const userService = {
   /**
    * Get current student profile
    */
-  async getCurrentStudent(): Promise<StudentProfile> {
-    const response = await apiService.get<StudentProfile>(`/students/${CURRENT_STUDENT_ID}`);
-    
-    if (response.error) {
-      console.error('Failed to fetch student profile:', response.error);
-      throw new Error(response.error);
-    }
-    
-    return response.data as StudentProfile;
+  async getCurrentStudent() {
+    return await apiService.get<StudentProfile>(`/students/${CURRENT_STUDENT_ID}`);
   },
   
   /**
    * Get student's friends
    */
-  async getStudentFriends(): Promise<Friend[]> {
-    const response = await apiService.get<Friend[]>(`/students/${CURRENT_STUDENT_ID}/friends`);
-    
-    if (response.error) {
-      console.error('Failed to fetch student friends:', response.error);
-      throw new Error(response.error);
-    }
-    
-    return response.data as Friend[];
+  async getStudentFriends() {
+    return await apiService.get<Friend[]>(`/students/${CURRENT_STUDENT_ID}/friends`);
   },
   
   /**
    * Get friend requests for student
    */
-  async getFriendRequests(): Promise<FriendRequest[]> {
-    const response = await apiService.get<FriendRequest[]>(`/students/${CURRENT_STUDENT_ID}/friends/requests`);
-    
-    if (response.error) {
-      console.error('Failed to fetch friend requests:', response.error);
-      throw new Error(response.error);
-    }
-    
-    return response.data as FriendRequest[];
+  async getFriendRequests() {
+    return await apiService.get<FriendRequest[]>(`/students/${CURRENT_STUDENT_ID}/friends/requests`);
   },
   
   /**
    * Search for students by name
    */
-  async searchStudents(name: string): Promise<StudentSearchResult[]> {
+  async searchStudents(name: string) {
     if (!name || name.length < 2) {
-      return [];
+      return { data: [], error: null };
     }
     
-    const response = await apiService.get<StudentSearchResult[]>(`/students?Name=${encodeURIComponent(name)}`);
-    
-    if (response.error) {
-      console.error('Failed to search students:', response.error);
-      throw new Error(response.error);
-    }
-    
-    return response.data as StudentSearchResult[];
+    return await apiService.get<StudentSearchResult[]>(`/students?Name=${encodeURIComponent(name)}`);
   },
 
   /**

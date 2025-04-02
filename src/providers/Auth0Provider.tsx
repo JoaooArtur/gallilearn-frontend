@@ -17,6 +17,7 @@ export const Auth0ProviderWithNavigate = ({ children }: Auth0ProviderWithNavigat
     navigate(appState?.returnTo || '/dashboard');
   };
 
+  // NextAuth style configuration with Auth0
   return (
     <Auth0Provider
       domain={domain}

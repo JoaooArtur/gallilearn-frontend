@@ -36,7 +36,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   } = useAuth0();
   const [user, setUser] = useState<any>(null);
 
-  // Sync Auth0 user with our backend and update API token
+  // NextAuth-style token and session management
   useEffect(() => {
     if (isAuthenticated && auth0User) {
       const updateUserAndToken = async () => {
@@ -47,7 +47,11 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           
           // Fetch user profile
           const studentProfile = await userService.getCurrentStudent();
-          setUser(studentProfile);
+          if (!studentProfile.error) {
+            setUser(studentProfile.data);
+          } else {
+            throw new Error(studentProfile.error as string);
+          }
         } catch (error) {
           console.error('Failed to fetch user profile or token:', error);
           toast({
@@ -62,10 +66,13 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   }, [isAuthenticated, auth0User, getAccessTokenSilently, toast]);
 
+  // NextAuth-style signin function
   const login = () => {
     loginWithRedirect({
       authorizationParams: {
-        connection: 'GallilearnStudent'
+        connection: 'GallilearnStudent',
+        // Use callbackUrl following NextAuth pattern
+        redirect_uri: window.location.origin,
       }
     });
   };
@@ -85,6 +92,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   };
 
+  // NextAuth-style signout
   const logout = () => {
     auth0Logout({ 
       logoutParams: {

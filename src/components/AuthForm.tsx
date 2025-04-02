@@ -8,6 +8,7 @@ import { LogIn } from 'lucide-react';
 const AuthForm = () => {
   const { login, isLoading } = useAuth();
 
+  // NextAuth-style signin handler
   const handleLogin = (e: React.FormEvent) => {
     e.preventDefault();
     login();
