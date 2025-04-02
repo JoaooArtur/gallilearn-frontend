@@ -26,9 +26,10 @@ const App = () => (
       <BrowserRouter>
         <AuthProvider>
           <Routes>
+            {/* Public route - Login page */}
             <Route path="/" element={<Index />} />
             
-            {/* Protected Routes */}
+            {/* Protected Routes - Everything else requires authentication */}
             <Route element={<ProtectedRoute />}>
               <Route path="/dashboard" element={<Dashboard />} />
               <Route path="/subjects" element={<SubjectsPage />} />

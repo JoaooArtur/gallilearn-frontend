@@ -50,7 +50,7 @@ const NavBar = () => {
             <DropdownMenuTrigger asChild>
               <Button variant="ghost" className="relative h-10 w-10 rounded-full">
                 <Avatar>
-                  <AvatarImage src={user?.picture || "/placeholder.svg"} alt="Avatar" />
+                  <AvatarImage src="/placeholder.svg" alt="Avatar" />
                   <AvatarFallback className="bg-astro-cosmic-purple text-primary-foreground">
                     {user ? getInitials(user.name) : 'AU'}
                   </AvatarFallback>

@@ -33,7 +33,7 @@ export const apiService = {
    * Make a GET request
    * @param endpoint API endpoint
    */
-  async get<T>(endpoint: string) {
+  async get<T>(endpoint: string): Promise<T> {
     try {
       const response = await fetch(`${this.baseUrl}${endpoint}`, {
         method: 'GET',
@@ -45,15 +45,10 @@ export const apiService = {
       }
 
       const data = await response.json();
-      // When we get an array, we need to return it directly
-      if (Array.isArray(data)) {
-        return data as T;
-      }
-      // For single objects, return as is
       return data as T;
     } catch (error) {
       console.error('API GET error:', error);
-      return { data: null, error: (error as Error).message };
+      throw error;
     }
   },
 
@@ -62,7 +57,7 @@ export const apiService = {
    * @param endpoint API endpoint
    * @param body Request body
    */
-  async post<T>(endpoint: string, body: any) {
+  async post<T>(endpoint: string, body: any): Promise<T> {
     try {
       const response = await fetch(`${this.baseUrl}${endpoint}`, {
         method: 'POST',
@@ -78,7 +73,7 @@ export const apiService = {
       return data as T;
     } catch (error) {
       console.error('API POST error:', error);
-      return { data: null, error: (error as Error).message };
+      throw error;
     }
   },
 
@@ -87,7 +82,7 @@ export const apiService = {
    * @param endpoint API endpoint
    * @param body Request body
    */
-  async put<T>(endpoint: string, body: any) {
+  async put<T>(endpoint: string, body: any): Promise<T> {
     try {
       const response = await fetch(`${this.baseUrl}${endpoint}`, {
         method: 'PUT',
@@ -103,7 +98,7 @@ export const apiService = {
       return data as T;
     } catch (error) {
       console.error('API PUT error:', error);
-      return { data: null, error: (error as Error).message };
+      throw error;
     }
   },
 
@@ -111,7 +106,7 @@ export const apiService = {
    * Make a DELETE request
    * @param endpoint API endpoint
    */
-  async delete<T>(endpoint: string) {
+  async delete<T>(endpoint: string): Promise<T> {
     try {
       const response = await fetch(`${this.baseUrl}${endpoint}`, {
         method: 'DELETE',
@@ -126,7 +121,7 @@ export const apiService = {
       return data as T;
     } catch (error) {
       console.error('API DELETE error:', error);
-      return { data: null, error: (error as Error).message };
+      throw error;
     }
   },
 };
