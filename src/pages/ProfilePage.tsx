@@ -51,8 +51,14 @@ const ProfilePage = () => {
                   name={user.name}
                   email={user.email}
                   level={5}
-                  progress={75}
                   streak={7}
+                  completedLessons={12}
+                  xp={750}
+                  nextLevelXp={1000}
+                  badges={[
+                    { id: '1', name: 'Iniciante', icon: '🔭' },
+                    { id: '2', name: '7 Dias', icon: '🔥' }
+                  ]}
                 />
               </CardContent>
             </Card>
