@@ -8,14 +8,14 @@ import { useAuth } from '@/contexts/AuthContext';
 import { LogIn } from 'lucide-react';
 
 const AuthForm = () => {
-  const { loginWithCredentials, isLoading } = useAuth();
+  const { login, isLoading } = useAuth();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
-      await loginWithCredentials(email, password);
+      await login(email, password);
     } catch (error) {
       console.error('Login failed:', error);
     }

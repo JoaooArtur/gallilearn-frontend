@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { useQuery } from '@tanstack/react-query';
 import NavBar from '@/components/NavBar';
@@ -61,8 +60,8 @@ const Dashboard = () => {
   // Convert API subjects to the format expected by SubjectCard
   const mapSubjectToCardProps = (studentSubject: any, index: number) => ({
     id: studentSubject.subject.id,
-    title: studentSubject.subject.name,
-    description: studentSubject.subject.description,
+    title: studentSubject.name,
+    description: studentSubject.description,
     completed: studentSubject.lessons.finishedLessons,
     total: studentSubject.lessons.totalLessons,
     icon: getIconForSubject(index)
