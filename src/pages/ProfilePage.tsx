@@ -9,35 +9,41 @@ import { Link } from 'react-router-dom';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { subjectsService } from '@/services/subjects.service';
+import { userService } from '@/services/user.service';
 import { toast } from 'sonner';
 
-// Dados de exemplo para a página de perfil
-const mockUserData = {
-  name: 'Astronauta',
-  username: 'astronauta123',
-  level: 5,
-  xp: 350,
-  nextLevelXp: 500,
-  streak: 3,
-  subjects: 3,
-  completedLessons: 2,
-  badges: [
-    { id: '1', name: 'Primeiro login', icon: '🚀' },
-    { id: '2', name: '3 dias seguidos', icon: '🔥' },
-    { id: '3', name: 'Completou primeira lição', icon: '📚' },
-  ],
-  stats: {
-    questionsAnswered: 35,
-    correctAnswers: 28,
-    accuracy: 80,
-    averageTime: 25,
-    bestSubject: 'Introdução à Astrofísica',
-  }
+// Dados de exemplo para estatísticas - seriam idealmente de API no futuro
+const mockStats = {
+  questionsAnswered: 35,
+  correctAnswers: 28,
+  accuracy: 80,
+  averageTime: 25,
+  bestSubject: 'Introdução à Astrofísica',
 };
 
+// Badges mockadas - seriam idealmente de API no futuro
+const mockBadges = [
+  { id: '1', name: 'Primeiro login', icon: '🚀' },
+  { id: '2', name: '3 dias seguidos', icon: '🔥' },
+  { id: '3', name: 'Completou primeira lição', icon: '📚' },
+];
+
 const ProfilePage = () => {
+  // Get student profile data
+  const { data: studentProfile, isLoading: isLoadingProfile } = useQuery({
+    queryKey: ['studentProfile'],
+    queryFn: () => userService.getCurrentStudent(),
+    meta: {
+      onError: (error: Error) => {
+        toast.error('Failed to load profile', {
+          description: error.message || 'Please try again later'
+        });
+      }
+    }
+  });
+
   // Get student subjects for profile page
-  const { data: studentSubjects, isLoading, isError } = useQuery({
+  const { data: studentSubjects, isLoading: isLoadingSubjects, isError } = useQuery({
     queryKey: ['profileSubjects'],
     queryFn: () => subjectsService.getStudentSubjects(),
     meta: {
@@ -65,6 +71,15 @@ const ProfilePage = () => {
     icon: getIconForSubject(index)
   });
 
+  const isLoading = isLoadingProfile || isLoadingSubjects;
+
+  // Extract username from email
+  const getUsername = (email: string) => {
+    if (!email) return '';
+    const parts = email.split('@');
+    return parts[0] || '';
+  };
+
   return (
     <div className="min-h-screen pb-16">
       <StarField />
@@ -79,17 +94,19 @@ const ProfilePage = () => {
         
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
           <div>
-            <UserProfile 
-              name={mockUserData.name}
-              username={mockUserData.username}
-              level={mockUserData.level}
-              xp={mockUserData.xp}
-              nextLevelXp={mockUserData.nextLevelXp}
-              streak={mockUserData.streak}
-              subjects={studentSubjects?.length || 0}
-              completedLessons={mockUserData.completedLessons}
-              badges={mockUserData.badges}
-            />
+            {studentProfile && (
+              <UserProfile 
+                name={studentProfile.name}
+                username={getUsername(studentProfile.email)}
+                level={studentProfile.level}
+                xp={studentProfile.xp}
+                nextLevelXp={studentProfile.nextLevelXPNeeded}
+                streak={studentProfile.daysStreak}
+                subjects={studentSubjects?.length || 0}
+                completedLessons={0} // Could be calculated from subjects data in the future
+                badges={mockBadges}
+              />
+            )}
           </div>
           
           <div className="lg:col-span-2">
@@ -108,11 +125,11 @@ const ProfilePage = () => {
                     <CardContent>
                       <div className="grid grid-cols-2 gap-4">
                         <div className="text-center">
-                          <p className="text-2xl font-bold">{mockUserData.stats.questionsAnswered}</p>
+                          <p className="text-2xl font-bold">{mockStats.questionsAnswered}</p>
                           <p className="text-sm text-muted-foreground">Respondidas</p>
                         </div>
                         <div className="text-center">
-                          <p className="text-2xl font-bold">{mockUserData.stats.correctAnswers}</p>
+                          <p className="text-2xl font-bold">{mockStats.correctAnswers}</p>
                           <p className="text-sm text-muted-foreground">Corretas</p>
                         </div>
                       </div>
@@ -125,7 +142,7 @@ const ProfilePage = () => {
                     </CardHeader>
                     <CardContent>
                       <div className="text-center">
-                        <p className="text-3xl font-bold">{mockUserData.stats.accuracy}%</p>
+                        <p className="text-3xl font-bold">{mockStats.accuracy}%</p>
                         <p className="text-sm text-muted-foreground">Taxa de acerto</p>
                       </div>
                     </CardContent>
@@ -137,7 +154,7 @@ const ProfilePage = () => {
                     </CardHeader>
                     <CardContent>
                       <div className="text-center">
-                        <p className="text-3xl font-bold">{mockUserData.stats.averageTime}s</p>
+                        <p className="text-3xl font-bold">{mockStats.averageTime}s</p>
                         <p className="text-sm text-muted-foreground">Por pergunta</p>
                       </div>
                     </CardContent>
@@ -149,7 +166,7 @@ const ProfilePage = () => {
                     </CardHeader>
                     <CardContent>
                       <div className="text-center">
-                        <p className="font-medium">{mockUserData.stats.bestSubject}</p>
+                        <p className="font-medium">{mockStats.bestSubject}</p>
                         <p className="text-sm text-muted-foreground">Taxa de acerto mais alta</p>
                       </div>
                     </CardContent>

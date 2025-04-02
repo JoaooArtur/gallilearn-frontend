@@ -1,6 +1,7 @@
 
 import React from 'react';
 import { Link } from 'react-router-dom';
+import { useQuery } from '@tanstack/react-query';
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { 
@@ -10,9 +11,24 @@ import {
   DropdownMenuSeparator, 
   DropdownMenuTrigger 
 } from "@/components/ui/dropdown-menu";
+import { userService } from '@/services/user.service';
 import Logo from './Logo';
 
 const NavBar = () => {
+  // Get student profile data
+  const { data: studentProfile } = useQuery({
+    queryKey: ['studentProfile'],
+    queryFn: () => userService.getCurrentStudent()
+  });
+
+  // Get initials for avatar
+  const getInitials = (name: string) => {
+    if (!name) return 'AU';
+    const parts = name.split(' ');
+    if (parts.length === 1) return parts[0].substring(0, 2).toUpperCase();
+    return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase();
+  };
+
   return (
     <header className="w-full p-4 border-b border-border/40 backdrop-blur-sm bg-background/30 fixed top-0 z-10">
       <div className="container flex items-center justify-between">
@@ -36,7 +52,9 @@ const NavBar = () => {
               <Button variant="ghost" className="relative h-10 w-10 rounded-full">
                 <Avatar>
                   <AvatarImage src="/placeholder.svg" alt="Avatar" />
-                  <AvatarFallback className="bg-astro-cosmic-purple text-primary-foreground">AU</AvatarFallback>
+                  <AvatarFallback className="bg-astro-cosmic-purple text-primary-foreground">
+                    {studentProfile ? getInitials(studentProfile.name) : 'AU'}
+                  </AvatarFallback>
                 </Avatar>
               </Button>
             </DropdownMenuTrigger>

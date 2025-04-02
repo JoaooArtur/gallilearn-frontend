@@ -1,5 +1,5 @@
-
 import { apiService } from './api.service';
+import { CURRENT_STUDENT_ID } from './user.service';
 
 // Subject interface updated to match API response
 export interface Subject {
@@ -92,9 +92,6 @@ export interface StudentSubject {
   };
 }
 
-// Student ID (fixed for now as requested)
-const STUDENT_ID = '2a1740d1-590f-41ae-87a1-4cd9e867d479';
-
 /**
  * Service for subject-related API calls
  */
@@ -103,7 +100,7 @@ export const subjectsService = {
    * Get all subjects for a student (for dashboard)
    */
   async getStudentSubjects(): Promise<StudentSubject[]> {
-    const response = await apiService.get<StudentSubject[]>(`/students/${STUDENT_ID}/subjects`);
+    const response = await apiService.get<StudentSubject[]>(`/students/${CURRENT_STUDENT_ID}/subjects`);
     
     if (response.error) {
       console.error('Failed to fetch student subjects:', response.error);
@@ -117,7 +114,7 @@ export const subjectsService = {
    * Get paginated subjects for a student
    */
   async getStudentSubjectsPaged(page: number = 1, limit: number = 10): Promise<PaginatedResponse<StudentSubject>> {
-    const response = await apiService.get<PaginatedResponse<StudentSubject>>(`/students/${STUDENT_ID}/subjects/paged?Offset=${page}&Limit=${limit}`);
+    const response = await apiService.get<PaginatedResponse<StudentSubject>>(`/students/${CURRENT_STUDENT_ID}/subjects/paged?Offset=${page}&Limit=${limit}`);
     
     if (response.error) {
       console.error('Failed to fetch paginated student subjects:', response.error);
@@ -173,7 +170,7 @@ export const subjectsService = {
    * Get lessons for a student and subject
    */
   async getStudentLessonsBySubjectId(subjectId: string): Promise<StudentLesson[]> {
-    const response = await apiService.get<StudentLesson[]>(`/students/${STUDENT_ID}/${subjectId}/lessons`);
+    const response = await apiService.get<StudentLesson[]>(`/students/${CURRENT_STUDENT_ID}/${subjectId}/lessons`);
     
     if (response.error) {
       console.error(`Failed to fetch student lessons for subject ${subjectId}:`, response.error);
@@ -202,7 +199,7 @@ export const subjectsService = {
    */
   async startLessonAttempt(subjectId: string, lessonId: string): Promise<AttemptResponse> {
     const response = await apiService.post<{}, AttemptResponse>(
-      `/students/${STUDENT_ID}/${subjectId}/${lessonId}/attempt`,
+      `/students/${CURRENT_STUDENT_ID}/${subjectId}/${lessonId}/attempt`,
       {}
     );
     
@@ -225,7 +222,7 @@ export const subjectsService = {
     answerId: string
   ): Promise<AnswerResponse> {
     const response = await apiService.post<{}, AnswerResponse>(
-      `/students/${STUDENT_ID}/${subjectId}/${lessonId}/${attemptId}/answer?QuestionId=${questionId}&AnswerId=${answerId}`,
+      `/students/${CURRENT_STUDENT_ID}/${subjectId}/${lessonId}/${attemptId}/answer?QuestionId=${questionId}&AnswerId=${answerId}`,
       {}
     );
     
