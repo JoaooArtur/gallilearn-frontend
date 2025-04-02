@@ -1,7 +1,6 @@
 
 import React from 'react';
 import { Link } from 'react-router-dom';
-import { useQuery } from '@tanstack/react-query';
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { 
@@ -11,15 +10,11 @@ import {
   DropdownMenuSeparator, 
   DropdownMenuTrigger 
 } from "@/components/ui/dropdown-menu";
-import { userService } from '@/services/user.service';
+import { useAuth } from '@/contexts/AuthContext';
 import Logo from './Logo';
 
 const NavBar = () => {
-  // Get student profile data
-  const { data: studentProfile } = useQuery({
-    queryKey: ['studentProfile'],
-    queryFn: () => userService.getCurrentStudent()
-  });
+  const { user, logout } = useAuth();
 
   // Get initials for avatar
   const getInitials = (name: string) => {
@@ -27,6 +22,10 @@ const NavBar = () => {
     const parts = name.split(' ');
     if (parts.length === 1) return parts[0].substring(0, 2).toUpperCase();
     return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase();
+  };
+
+  const handleLogout = () => {
+    logout();
   };
 
   return (
@@ -51,9 +50,9 @@ const NavBar = () => {
             <DropdownMenuTrigger asChild>
               <Button variant="ghost" className="relative h-10 w-10 rounded-full">
                 <Avatar>
-                  <AvatarImage src="/placeholder.svg" alt="Avatar" />
+                  <AvatarImage src={user?.picture || "/placeholder.svg"} alt="Avatar" />
                   <AvatarFallback className="bg-astro-cosmic-purple text-primary-foreground">
-                    {studentProfile ? getInitials(studentProfile.name) : 'AU'}
+                    {user ? getInitials(user.name) : 'AU'}
                   </AvatarFallback>
                 </Avatar>
               </Button>
@@ -66,8 +65,8 @@ const NavBar = () => {
                 <Link to="/settings">Configurações</Link>
               </DropdownMenuItem>
               <DropdownMenuSeparator />
-              <DropdownMenuItem asChild>
-                <Link to="/">Sair</Link>
+              <DropdownMenuItem onClick={handleLogout}>
+                Sair
               </DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>

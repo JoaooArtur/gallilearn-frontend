@@ -107,5 +107,12 @@ export const userService = {
     }
     
     return response.data as StudentSearchResult[];
+  },
+
+  /**
+   * Update Auth0 token in API service if needed
+   */
+  setAuthToken(token: string) {
+    apiService.setAuthToken(token);
   }
 };
