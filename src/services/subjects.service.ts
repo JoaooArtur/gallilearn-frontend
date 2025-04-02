@@ -1,9 +1,8 @@
 
 import { apiService } from './api.service';
-import { useAuth } from '@/contexts/AuthContext';
 
-// Tipos
-interface Subject {
+// Types
+export interface Subject {
   id: string;
   name: string;
   description: string;
@@ -13,7 +12,7 @@ interface Subject {
   progress: number;
 }
 
-interface Lesson {
+export interface Lesson {
   id: string;
   title: string;
   description: string;
@@ -25,89 +24,126 @@ interface Lesson {
   quizzes: Quiz[];
 }
 
-interface Quiz {
+export interface Quiz {
   id: string;
   title: string;
   description: string;
   questions: Question[];
 }
 
-interface Question {
+export interface Question {
   id: string;
   text: string;
   options: Option[];
   correctOptionId: string;
 }
 
-interface Option {
+export interface Option {
   id: string;
   text: string;
 }
 
-interface AnswerSubmission {
+export interface AnswerSubmission {
   questionId: string;
   selectedOptionId: string;
 }
 
-// Serviço de subjects
+// Student types for other components usage
+export interface StudentLesson {
+  id: string;
+  title: string;
+  description: string;
+  order: number;
+  completed: boolean;
+  imageUrl: string;
+}
+
+export interface StudentSubject {
+  id: string;
+  name: string;
+  description: string;
+  imageUrl: string;
+  lessonsCount: number;
+  completedLessonsCount: number;
+  progress: number;
+}
+
+export interface AnswerResponse {
+  isCorrect: boolean;
+  correctAnswerId: string;
+  explanation: string;
+}
+
+// Subjects service
 export const subjectsService = {
   /**
-   * Obter todos os subjects disponíveis para o estudante
+   * Get all subjects available for the student
    */
   async getSubjects() {
-    const { user } = useAuth();
-    const studentId = user?.sub || '';
-    return apiService.get<Subject[]>(`/students/${studentId}/subjects`);
+    return apiService.get<Subject[]>(`/students/${userService.CURRENT_STUDENT_ID}/subjects`);
   },
 
   /**
-   * Obter um subject específico pelo ID
-   * @param subjectId ID do subject
+   * Get student subjects with paging
+   */
+  async getStudentSubjectsPaged(page: number = 1, pageSize: number = 10) {
+    return apiService.get<StudentSubject[]>(`/students/${userService.CURRENT_STUDENT_ID}/subjects?page=${page}&pageSize=${pageSize}`);
+  },
+
+  /**
+   * Get a specific subject by ID
+   * @param subjectId Subject ID
    */
   async getSubject(subjectId: string) {
-    const { user } = useAuth();
-    const studentId = user?.sub || '';
-    return apiService.get<Subject>(`/students/${studentId}/subjects/${subjectId}`);
+    return apiService.get<Subject>(`/students/${userService.CURRENT_STUDENT_ID}/subjects/${subjectId}`);
   },
 
   /**
-   * Obter todas as lições de um subject
-   * @param subjectId ID do subject
+   * Alias for getSubject
+   */
+  async getSubjectById(subjectId: string) {
+    return this.getSubject(subjectId);
+  },
+
+  /**
+   * Get all lessons for a subject
+   * @param subjectId Subject ID
    */
   async getLessons(subjectId: string) {
-    const { user } = useAuth();
-    const studentId = user?.sub || '';
-    return apiService.get<Lesson[]>(`/students/${studentId}/subjects/${subjectId}/lessons`);
+    return apiService.get<Lesson[]>(`/students/${userService.CURRENT_STUDENT_ID}/subjects/${subjectId}/lessons`);
   },
 
   /**
-   * Obter uma lição específica pelo ID
-   * @param subjectId ID do subject
-   * @param lessonId ID da lição
+   * Get student lessons by subject ID
+   */
+  async getStudentLessonsBySubjectId(subjectId: string) {
+    return apiService.get<StudentLesson[]>(`/students/${userService.CURRENT_STUDENT_ID}/subjects/${subjectId}/lessons`);
+  },
+
+  /**
+   * Get a specific lesson by ID
+   * @param subjectId Subject ID
+   * @param lessonId Lesson ID
    */
   async getLesson(subjectId: string, lessonId: string) {
-    const { user } = useAuth();
-    const studentId = user?.sub || '';
-    return apiService.get<Lesson>(`/students/${studentId}/subjects/${subjectId}/lessons/${lessonId}`);
+    return apiService.get<Lesson>(`/students/${userService.CURRENT_STUDENT_ID}/subjects/${subjectId}/lessons/${lessonId}`);
   },
 
   /**
-   * Marcar uma lição como concluída
-   * @param subjectId ID do subject
-   * @param lessonId ID da lição
+   * Mark a lesson as completed
+   * @param subjectId Subject ID
+   * @param lessonId Lesson ID
    */
   async completeLesson(subjectId: string, lessonId: string) {
-    const { user } = useAuth();
-    const studentId = user?.sub || '';
-    return apiService.post(`/students/${studentId}/subjects/${subjectId}/lessons/${lessonId}/complete`, {});
+    return apiService.post(`/students/${userService.CURRENT_STUDENT_ID}/subjects/${subjectId}/lessons/${lessonId}/complete`, {});
   },
 
   /**
-   * Enviar respostas de um quiz
-   * @param subjectId ID do subject
-   * @param lessonId ID da lição
-   * @param quizId ID do quiz
-   * @param answers Respostas do quiz
+   * Submit answers for a quiz
+   * @param subjectId Subject ID
+   * @param lessonId Lesson ID
+   * @param quizId Quiz ID
+   * @param answers Quiz answers
    */
   async submitQuizAnswers(
     subjectId: string,
@@ -115,8 +151,40 @@ export const subjectsService = {
     quizId: string,
     answers: AnswerSubmission[]
   ) {
-    const { user } = useAuth();
-    const studentId = user?.sub || '';
-    return apiService.post(`/students/${studentId}/subjects/${subjectId}/lessons/${lessonId}/quizzes/${quizId}/submit`, { answers });
+    return apiService.post(`/students/${userService.CURRENT_STUDENT_ID}/subjects/${subjectId}/lessons/${lessonId}/quizzes/${quizId}/submit`, { answers });
   },
+
+  /**
+   * Get student subjects
+   */
+  async getStudentSubjects() {
+    return apiService.get<StudentSubject[]>(`/students/${userService.CURRENT_STUDENT_ID}/subjects`);
+  },
+
+  /**
+   * Get random questions by lesson ID
+   */
+  async getRandomQuestionsByLessonId(subjectId: string, lessonId: string, count: number = 5) {
+    return apiService.get<Question[]>(`/students/${userService.CURRENT_STUDENT_ID}/subjects/${subjectId}/lessons/${lessonId}/questions/random?count=${count}`);
+  },
+
+  /**
+   * Start a lesson attempt
+   */
+  async startLessonAttempt(subjectId: string, lessonId: string) {
+    return apiService.post(`/students/${userService.CURRENT_STUDENT_ID}/subjects/${subjectId}/lessons/${lessonId}/attempt`, {});
+  },
+
+  /**
+   * Submit an answer
+   */
+  async submitAnswer(attemptId: string, questionId: string, selectedOptionId: string) {
+    return apiService.post<AnswerResponse>(`/lesson-attempts/${attemptId}/answers`, { 
+      questionId, 
+      selectedOptionId 
+    });
+  }
 };
+
+// Import user service to use the current student ID
+import { userService } from './user.service';

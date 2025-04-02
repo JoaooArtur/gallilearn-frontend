@@ -9,8 +9,8 @@ interface Auth0ProviderWithNavigateProps {
 export const Auth0ProviderWithNavigate = ({ children }: Auth0ProviderWithNavigateProps) => {
   const navigate = useNavigate();
 
-  const domain = "YOUR_AUTH0_DOMAIN"; // Replace with your Auth0 domain
-  const clientId = "YOUR_AUTH0_CLIENT_ID"; // Replace with your Auth0 client ID
+  const domain = "dev-3nm4vadwgq6pajxd.us.auth0.com";
+  const clientId = "NWnYMDMRXC29zksxd00y9IqeUzvBTIck";
   const redirectUri = window.location.origin;
 
   const onRedirectCallback = (appState: any) => {
@@ -25,6 +25,7 @@ export const Auth0ProviderWithNavigate = ({ children }: Auth0ProviderWithNavigat
         redirect_uri: redirectUri,
       }}
       onRedirectCallback={onRedirectCallback}
+      useFormData={true}
     >
       {children}
     </Auth0Provider>

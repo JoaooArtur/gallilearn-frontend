@@ -9,6 +9,7 @@ interface AuthContextProps {
   isLoading: boolean;
   login: () => void;
   logout: () => void;
+  loginWithCredentials: (email: string, password: string) => Promise<void>;
   user: any;
 }
 
@@ -17,6 +18,7 @@ const AuthContext = createContext<AuthContextProps>({
   isLoading: true,
   login: () => {},
   logout: () => {},
+  loginWithCredentials: async () => {},
   user: null,
 });
 
@@ -27,34 +29,52 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const {
     isAuthenticated,
     loginWithRedirect,
+    loginWithCredentials: auth0LoginWithCredentials,
     logout: auth0Logout,
     user: auth0User,
     isLoading,
+    getAccessTokenSilently,
   } = useAuth0();
   const [user, setUser] = useState<any>(null);
 
-  // Sync Auth0 user with our backend
+  // Sync Auth0 user with our backend and update API token
   useEffect(() => {
     if (isAuthenticated && auth0User) {
-      // Here you would typically call your backend to validate the user
-      // and get additional user data or create a new user if they don't exist
-      userService.getCurrentStudent()
-        .then(studentProfile => {
+      const updateUserAndToken = async () => {
+        try {
+          // Get token and set it in the API service
+          const token = await getAccessTokenSilently();
+          userService.setAuthToken(token);
+          
+          // Fetch user profile
+          const studentProfile = await userService.getCurrentStudent();
           setUser(studentProfile);
-        })
-        .catch(error => {
-          console.error('Failed to fetch user profile:', error);
+        } catch (error) {
+          console.error('Failed to fetch user profile or token:', error);
           toast({
-            title: 'Error',
-            description: 'Failed to load user profile',
-            variant: 'destructive',
+            title: "Erro",
+            description: "Falha ao carregar perfil do usuário",
+            variant: "destructive",
           });
-        });
+        }
+      };
+      
+      updateUserAndToken();
     }
-  }, [isAuthenticated, auth0User, toast]);
+  }, [isAuthenticated, auth0User, getAccessTokenSilently, toast]);
 
   const login = () => {
     loginWithRedirect();
+  };
+
+  const loginWithCredentials = async (email: string, password: string) => {
+    try {
+      await auth0LoginWithCredentials({ username: email, password });
+      // The Auth0 useEffect above will handle the token and profile fetching
+    } catch (error) {
+      console.error("Login credential error:", error);
+      throw error;
+    }
   };
 
   const logout = () => {
@@ -73,6 +93,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         isLoading,
         login,
         logout,
+        loginWithCredentials,
         user: user || auth0User,
       }}
     >
