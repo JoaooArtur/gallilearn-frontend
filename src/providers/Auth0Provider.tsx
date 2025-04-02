@@ -25,7 +25,6 @@ export const Auth0ProviderWithNavigate = ({ children }: Auth0ProviderWithNavigat
         redirect_uri: redirectUri,
       }}
       onRedirectCallback={onRedirectCallback}
-      useFormData={true}
     >
       {children}
     </Auth0Provider>

@@ -9,7 +9,7 @@ import { LogIn } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 
 const AuthForm = () => {
-  const { loginWithCredentials, isLoading } = useAuth();
+  const { login, isLoading } = useAuth();
   const { toast } = useToast();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -27,7 +27,8 @@ const AuthForm = () => {
     }
 
     try {
-      await loginWithCredentials(email, password);
+      // Use the standard login instead of attempting credential login
+      login();
     } catch (error) {
       console.error("Erro de login:", error);
       toast({

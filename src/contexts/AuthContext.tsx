@@ -29,11 +29,11 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const {
     isAuthenticated,
     loginWithRedirect,
-    loginWithCredentials: auth0LoginWithCredentials,
     logout: auth0Logout,
     user: auth0User,
     isLoading,
     getAccessTokenSilently,
+    loginWithPopup,
   } = useAuth0();
   const [user, setUser] = useState<any>(null);
 
@@ -69,10 +69,23 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const loginWithCredentials = async (email: string, password: string) => {
     try {
-      await auth0LoginWithCredentials({ username: email, password });
-      // The Auth0 useEffect above will handle the token and profile fetching
+      // Use the loginWithPopup method with credentials
+      await loginWithPopup({
+        authorizationParams: {
+          connection: 'Username-Password-Authentication',
+          login_hint: email,
+        },
+        popup: false,
+      });
+      
+      // The useEffect above will handle token and profile fetching after successful login
     } catch (error) {
       console.error("Login credential error:", error);
+      toast({
+        title: "Erro ao fazer login",
+        description: "Verifique suas credenciais e tente novamente",
+        variant: "destructive",
+      });
       throw error;
     }
   };
