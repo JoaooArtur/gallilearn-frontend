@@ -1,6 +1,6 @@
 
 import React from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
@@ -13,8 +13,12 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { userService } from '@/services/user.service';
 import Logo from './Logo';
+import { useAuth } from '@/context/AuthContext';
 
 const NavBar = () => {
+  const { logout } = useAuth();
+  const navigate = useNavigate();
+  
   // Get student profile data
   const { data: studentProfile } = useQuery({
     queryKey: ['studentProfile'],
@@ -27,6 +31,11 @@ const NavBar = () => {
     const parts = name.split(' ');
     if (parts.length === 1) return parts[0].substring(0, 2).toUpperCase();
     return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase();
+  };
+
+  const handleLogout = () => {
+    logout();
+    navigate('/');
   };
 
   return (
@@ -66,8 +75,8 @@ const NavBar = () => {
                 <Link to="/settings">Configurações</Link>
               </DropdownMenuItem>
               <DropdownMenuSeparator />
-              <DropdownMenuItem asChild>
-                <Link to="/">Sair</Link>
+              <DropdownMenuItem onClick={handleLogout}>
+                Sair
               </DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
