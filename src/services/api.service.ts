@@ -14,6 +14,38 @@ interface ApiResponse<T> {
  * Service to handle API requests
  */
 export const apiService = {
+  // Store the auth token
+  authToken: null as string | null,
+
+  /**
+   * Set the auth token for API requests
+   */
+  setAuthToken(token: string) {
+    this.authToken = token;
+  },
+
+  /**
+   * Clear the auth token
+   */
+  clearAuthToken() {
+    this.authToken = null;
+  },
+
+  /**
+   * Get headers for requests
+   */
+  getHeaders() {
+    const headers: Record<string, string> = {
+      'Content-Type': 'application/json',
+    };
+
+    if (this.authToken) {
+      headers['Authorization'] = `Bearer ${this.authToken}`;
+    }
+
+    return headers;
+  },
+
   /**
    * Generic GET request
    */
@@ -21,9 +53,7 @@ export const apiService = {
     try {
       const response = await fetch(`${API_BASE_URL}${endpoint}`, {
         method: 'GET',
-        headers: {
-          'Content-Type': 'application/json',
-        },
+        headers: this.getHeaders(),
       });
       
       const status = response.status;
@@ -53,9 +83,7 @@ export const apiService = {
     try {
       const response = await fetch(`${API_BASE_URL}${endpoint}`, {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
+        headers: this.getHeaders(),
         body: JSON.stringify(body),
       });
       
@@ -86,9 +114,7 @@ export const apiService = {
     try {
       const response = await fetch(`${API_BASE_URL}${endpoint}`, {
         method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json',
-        },
+        headers: this.getHeaders(),
         body: JSON.stringify(body),
       });
       
@@ -119,9 +145,7 @@ export const apiService = {
     try {
       const response = await fetch(`${API_BASE_URL}${endpoint}`, {
         method: 'DELETE',
-        headers: {
-          'Content-Type': 'application/json',
-        },
+        headers: this.getHeaders(),
       });
       
       const status = response.status;
