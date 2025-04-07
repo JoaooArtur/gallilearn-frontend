@@ -1,6 +1,13 @@
 
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import { apiService } from '@/services/api.service';
+import jwt_decode from 'jwt-decode';
+
+// JWT token interface
+interface JwtPayload {
+  Id?: string;
+  [key: string]: any;
+}
 
 // Authentication response interface
 interface AuthResponse {
@@ -11,6 +18,7 @@ interface AuthResponse {
 interface AuthContextType {
   isAuthenticated: boolean;
   token: string | null;
+  studentId: string | null;
   login: (email: string, password: string) => Promise<void>;
   logout: () => void;
 }
@@ -19,6 +27,7 @@ interface AuthContextType {
 const AuthContext = createContext<AuthContextType>({
   isAuthenticated: false,
   token: null,
+  studentId: null,
   login: async () => {},
   logout: () => {},
 });
@@ -30,15 +39,31 @@ interface AuthProviderProps {
 
 export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const [token, setToken] = useState<string | null>(null);
+  const [studentId, setStudentId] = useState<string | null>(null);
   const [isAuthenticated, setIsAuthenticated] = useState<boolean>(false);
   const [isInitialized, setIsInitialized] = useState<boolean>(false);
+
+  // Extract studentId from JWT token
+  const extractStudentIdFromToken = (authToken: string): string | null => {
+    try {
+      const decodedToken = jwt_decode<JwtPayload>(authToken);
+      return decodedToken.Id || null;
+    } catch (error) {
+      console.error('Failed to decode token:', error);
+      return null;
+    }
+  };
 
   // Check if there's a token in localStorage on initial load
   useEffect(() => {
     const storedToken = localStorage.getItem('auth_token');
     if (storedToken) {
-      // Set the token in state
+      // Extract studentId from token
+      const extractedStudentId = extractStudentIdFromToken(storedToken);
+      
+      // Set the token and studentId in state
       setToken(storedToken);
+      setStudentId(extractedStudentId);
       setIsAuthenticated(true);
       
       // Update API service auth headers
@@ -77,6 +102,9 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 
       const { token } = response.data as AuthResponse;
       
+      // Extract studentId from token
+      const extractedStudentId = extractStudentIdFromToken(token);
+      
       // Store token in localStorage
       localStorage.setItem('auth_token', token);
       
@@ -85,6 +113,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       
       // Update state
       setToken(token);
+      setStudentId(extractedStudentId);
       setIsAuthenticated(true);
     } catch (error) {
       console.error('Login failed:', error);
@@ -102,6 +131,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     
     // Update state
     setToken(null);
+    setStudentId(null);
     setIsAuthenticated(false);
   };
 
@@ -111,7 +141,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   }
 
   return (
-    <AuthContext.Provider value={{ isAuthenticated, token, login, logout }}>
+    <AuthContext.Provider value={{ isAuthenticated, token, studentId, login, logout }}>
       {children}
     </AuthContext.Provider>
   );
