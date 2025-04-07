@@ -1,6 +1,6 @@
 
 import React, { useState } from 'react';
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import NavBar from '@/components/NavBar';
 import StarField from '@/components/StarField';
 import FriendCard from '@/components/FriendCard';
@@ -16,11 +16,19 @@ import { useAuth } from '@/context/AuthContext';
 const FriendsPage = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const { studentId } = useAuth();
+  const queryClient = useQueryClient();
   
-  // Get friends data
+  // Get friends data using studentId from AuthContext
   const { data: friends = [], isLoading: isLoadingFriends } = useQuery({
-    queryKey: ['friends'],
-    queryFn: () => userService.getStudentFriends(),
+    queryKey: ['friends', studentId],
+    queryFn: () => {
+      if (!studentId) {
+        toast.error('User ID not available');
+        return [];
+      }
+      return userService.getStudentFriends(studentId);
+    },
+    enabled: !!studentId,
     meta: {
       onError: (error: Error) => {
         toast.error('Failed to load friends', {
@@ -49,6 +57,57 @@ const FriendsPage = () => {
       }
     }
   });
+  
+  // Accept friend request mutation
+  const acceptFriendMutation = useMutation({
+    mutationFn: ({ requestId }: { requestId: string }) => {
+      if (!studentId) {
+        throw new Error('User ID not available');
+      }
+      return userService.acceptFriendRequest(studentId, requestId);
+    },
+    onSuccess: () => {
+      toast.success('Friend request accepted');
+      // Invalidate queries to refetch updated data
+      queryClient.invalidateQueries({ queryKey: ['friendRequests'] });
+      queryClient.invalidateQueries({ queryKey: ['friends'] });
+    },
+    onError: (error: Error) => {
+      toast.error('Failed to accept friend request', {
+        description: error.message || 'Please try again later'
+      });
+    }
+  });
+
+  // Reject friend request mutation
+  const rejectFriendMutation = useMutation({
+    mutationFn: ({ requestId }: { requestId: string }) => {
+      if (!studentId) {
+        throw new Error('User ID not available');
+      }
+      return userService.rejectFriendRequest(studentId, requestId);
+    },
+    onSuccess: () => {
+      toast.success('Friend request rejected');
+      // Invalidate query to refetch updated data
+      queryClient.invalidateQueries({ queryKey: ['friendRequests'] });
+    },
+    onError: (error: Error) => {
+      toast.error('Failed to reject friend request', {
+        description: error.message || 'Please try again later'
+      });
+    }
+  });
+  
+  // Handle accepting a friend request
+  const handleAcceptRequest = (requestId: string) => {
+    acceptFriendMutation.mutate({ requestId });
+  };
+  
+  // Handle rejecting a friend request
+  const handleRejectRequest = (requestId: string) => {
+    rejectFriendMutation.mutate({ requestId });
+  };
   
   // Search for students
   const { data: searchResults = [], isLoading: isSearching } = useQuery({
@@ -82,6 +141,7 @@ const FriendsPage = () => {
   });
   
   const isLoading = isLoadingFriends || isLoadingRequests;
+  const isProcessing = acceptFriendMutation.isPending || rejectFriendMutation.isPending;
   
   return (
     <div className="min-h-screen pb-16">
@@ -214,8 +274,25 @@ const FriendsPage = () => {
                       </div>
                       
                       <div className="flex space-x-2">
-                        <Button variant="outline" className="flex-1">Recusar</Button>
-                        <Button className="flex-1">Aceitar</Button>
+                        <Button 
+                          variant="outline" 
+                          className="flex-1" 
+                          onClick={() => handleRejectRequest(request.id)}
+                          disabled={isProcessing}
+                        >
+                          {rejectFriendMutation.isPending && rejectFriendMutation.variables?.requestId === request.id 
+                            ? 'Rejeitando...' 
+                            : 'Recusar'}
+                        </Button>
+                        <Button 
+                          className="flex-1"
+                          onClick={() => handleAcceptRequest(request.id)}
+                          disabled={isProcessing}
+                        >
+                          {acceptFriendMutation.isPending && acceptFriendMutation.variables?.requestId === request.id 
+                            ? 'Aceitando...' 
+                            : 'Aceitar'}
+                        </Button>
                       </div>
                     </CardContent>
                   </Card>

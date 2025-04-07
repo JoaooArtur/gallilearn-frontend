@@ -72,8 +72,8 @@ export const userService = {
   /**
    * Get student's friends
    */
-  async getStudentFriends(): Promise<Friend[]> {
-    const response = await apiService.get<Friend[]>(`/students/${CURRENT_STUDENT_ID}/friends`);
+  async getStudentFriends(studentId: string): Promise<Friend[]> {
+    const response = await apiService.get<Friend[]>(`/students/${studentId}/friends`);
     
     if (response.error) {
       console.error('Failed to fetch student friends:', response.error);
@@ -96,6 +96,40 @@ export const userService = {
     }
     
     return response.data as FriendRequest[];
+  },
+
+  /**
+   * Accept a friend request
+   * @param studentId The ID of the student accepting the request
+   * @param requestId The ID of the friend request
+   */
+  async acceptFriendRequest(studentId: string, requestId: string): Promise<void> {
+    const response = await apiService.put<void, void>(
+      `/students/${studentId}/friends/requests/${requestId}/accept`, 
+      {}
+    );
+    
+    if (response.error) {
+      console.error('Failed to accept friend request:', response.error);
+      throw new Error(response.error);
+    }
+  },
+
+  /**
+   * Reject a friend request
+   * @param studentId The ID of the student rejecting the request
+   * @param requestId The ID of the friend request
+   */
+  async rejectFriendRequest(studentId: string, requestId: string): Promise<void> {
+    const response = await apiService.put<void, void>(
+      `/students/${studentId}/friends/requests/${requestId}/reject`, 
+      {}
+    );
+    
+    if (response.error) {
+      console.error('Failed to reject friend request:', response.error);
+      throw new Error(response.error);
+    }
   },
   
   /**
