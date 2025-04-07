@@ -16,6 +16,9 @@ interface ApiResponse<T> {
 export const apiService = {
   // Store the auth token
   authToken: null as string | null,
+  
+  // Store the idToken
+  idToken: null as string | null,
 
   /**
    * Set the auth token for API requests
@@ -30,6 +33,20 @@ export const apiService = {
   clearAuthToken() {
     this.authToken = null;
   },
+  
+  /**
+   * Set the id token for API requests
+   */
+  setIdToken(token: string) {
+    this.idToken = token;
+  },
+  
+  /**
+   * Clear the id token
+   */
+  clearIdToken() {
+    this.idToken = null;
+  },
 
   /**
    * Get headers for requests
@@ -41,6 +58,10 @@ export const apiService = {
 
     if (this.authToken) {
       headers['Authorization'] = `Bearer ${this.authToken}`;
+    }
+    
+    if (this.idToken) {
+      headers['idToken'] = this.idToken;
     }
 
     return headers;

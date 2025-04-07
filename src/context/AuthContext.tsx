@@ -52,9 +52,14 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     if (authToken) {
       // Set the Authorization header for all future API requests
       apiService.setAuthToken(authToken);
+      // Also set the idToken for all future API requests
+      // Using the same token as both auth token and idToken
+      apiService.setIdToken(authToken);
     } else {
       // Clear the Authorization header
       apiService.clearAuthToken();
+      // Clear the idToken
+      apiService.clearIdToken();
     }
   };
 
