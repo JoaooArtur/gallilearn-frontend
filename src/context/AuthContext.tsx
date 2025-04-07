@@ -1,7 +1,7 @@
 
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import { apiService } from '@/services/api.service';
-import jwt_decode from 'jwt-decode';
+import { jwtDecode } from 'jwt-decode';
 
 // JWT token interface
 interface JwtPayload {
@@ -46,7 +46,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   // Extract studentId from JWT token
   const extractStudentIdFromToken = (authToken: string): string | null => {
     try {
-      const decodedToken = jwt_decode<JwtPayload>(authToken);
+      const decodedToken = jwtDecode<JwtPayload>(authToken);
       return decodedToken.Id || null;
     } catch (error) {
       console.error('Failed to decode token:', error);
