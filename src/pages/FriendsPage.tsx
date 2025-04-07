@@ -11,9 +11,11 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Link } from 'react-router-dom';
 import { userService } from '@/services/user.service';
 import { toast } from 'sonner';
+import { useAuth } from '@/context/AuthContext';
 
 const FriendsPage = () => {
   const [searchTerm, setSearchTerm] = useState('');
+  const { studentId } = useAuth();
   
   // Get friends data
   const { data: friends = [], isLoading: isLoadingFriends } = useQuery({
@@ -28,10 +30,17 @@ const FriendsPage = () => {
     }
   });
   
-  // Get friend requests
+  // Get friend requests using the studentId from AuthContext
   const { data: friendRequests = [], isLoading: isLoadingRequests } = useQuery({
-    queryKey: ['friendRequests'],
-    queryFn: () => userService.getFriendRequests(),
+    queryKey: ['friendRequests', studentId],
+    queryFn: () => {
+      if (!studentId) {
+        toast.error('User ID not available');
+        return [];
+      }
+      return userService.getFriendRequests(studentId);
+    },
+    enabled: !!studentId,
     meta: {
       onError: (error: Error) => {
         toast.error('Failed to load friend requests', {
@@ -196,11 +205,11 @@ const FriendsPage = () => {
                     <CardContent className="p-4">
                       <div className="flex items-center gap-4 mb-4">
                         <div className="w-12 h-12 rounded-full bg-astro-cosmic-purple flex items-center justify-center text-lg font-bold">
-                          ?
+                          {request.friend?.name ? request.friend.name.charAt(0).toUpperCase() : '?'}
                         </div>
                         <div>
-                          <h4 className="font-medium">Solicitação de amizade</h4>
-                          <p className="text-sm text-muted-foreground">ID: {request.id.substring(0, 8)}...</p>
+                          <h4 className="font-medium">{request.friend?.name || 'Unknown User'}</h4>
+                          <p className="text-sm text-muted-foreground">{request.friend?.email || `ID: ${request.friendId.substring(0, 8)}...`}</p>
                         </div>
                       </div>
                       

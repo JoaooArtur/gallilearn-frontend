@@ -1,5 +1,6 @@
 
 import { apiService } from './api.service';
+import { useAuth } from '@/context/AuthContext';
 
 // Student profile interface
 export interface StudentProfile {
@@ -33,6 +34,11 @@ export interface FriendRequest {
   friendId: string;
   status: string;
   createdAt: string;
+  friend?: {
+    id: string;
+    name: string;
+    email: string;
+  };
 }
 
 // Search result interface
@@ -79,9 +85,10 @@ export const userService = {
   
   /**
    * Get friend requests for student
+   * @param studentId The ID of the student to get requests for
    */
-  async getFriendRequests(): Promise<FriendRequest[]> {
-    const response = await apiService.get<FriendRequest[]>(`/students/${CURRENT_STUDENT_ID}/friends/requests`);
+  async getFriendRequests(studentId: string): Promise<FriendRequest[]> {
+    const response = await apiService.get<FriendRequest[]>(`/students/${studentId}/friends/requests`);
     
     if (response.error) {
       console.error('Failed to fetch friend requests:', response.error);
