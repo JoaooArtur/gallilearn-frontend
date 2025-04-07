@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -7,7 +6,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useToast } from "@/components/ui/use-toast";
 import { useAuth } from '@/context/AuthContext';
 import { useNavigate } from 'react-router-dom';
-import { CalendarIcon } from "lucide-react";
+import { CalendarIcon, ChevronLeft, ChevronRight } from "lucide-react";
 import { format } from "date-fns";
 import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
@@ -22,6 +21,22 @@ interface SignUpData {
   dateOfBirth: Date | undefined;
 }
 
+const formatPhoneNumber = (value: string): string => {
+  if (!value) return value;
+  
+  const phoneNumber = value.replace(/\D/g, '');
+  
+  if (phoneNumber.length <= 2) {
+    return `(${phoneNumber}`;
+  } else if (phoneNumber.length <= 6) {
+    return `(${phoneNumber.slice(0, 2)}) ${phoneNumber.slice(2)}`;
+  } else if (phoneNumber.length <= 10) {
+    return `(${phoneNumber.slice(0, 2)}) ${phoneNumber.slice(2, 6)}-${phoneNumber.slice(6)}`;
+  } else {
+    return `(${phoneNumber.slice(0, 2)}) ${phoneNumber.slice(2, 7)}-${phoneNumber.slice(7, 11)}`;
+  }
+};
+
 const AuthForm = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [loginData, setLoginData] = useState({ email: '', password: '' });
@@ -35,6 +50,8 @@ const AuthForm = () => {
   const { toast } = useToast();
   const { login } = useAuth();
   const navigate = useNavigate();
+  const [currentYear, setCurrentYear] = useState(new Date().getFullYear());
+  const [phoneInputValue, setPhoneInputValue] = useState('');
 
   const handleLogin = async (event: React.FormEvent) => {
     event.preventDefault();
@@ -48,7 +65,6 @@ const AuthForm = () => {
         description: "Bem-vindo de volta ao AstroQuest!",
       });
       
-      // Redirect to dashboard after successful login
       navigate('/dashboard');
     } catch (error) {
       console.error('Login failed:', error);
@@ -66,7 +82,6 @@ const AuthForm = () => {
     event.preventDefault();
     setIsLoading(true);
     
-    // Check if dateOfBirth is defined
     if (!registerData.dateOfBirth) {
       toast({
         title: "Dados incompletos",
@@ -78,7 +93,6 @@ const AuthForm = () => {
     }
 
     try {
-      // Format data for the API
       const signUpBody = {
         name: registerData.name,
         email: registerData.email,
@@ -87,7 +101,6 @@ const AuthForm = () => {
         dateOfBirth: registerData.dateOfBirth.toISOString()
       };
 
-      // Send sign-up request
       const response = await apiService.post('/students/sign-up', signUpBody);
       
       if (response.error) {
@@ -99,7 +112,6 @@ const AuthForm = () => {
         description: "Bem-vindo ao AstroQuest! Por favor, faça login para continuar.",
       });
       
-      // Clear form and switch to login tab
       setRegisterData({ 
         name: '', 
         email: '', 
@@ -108,13 +120,11 @@ const AuthForm = () => {
         dateOfBirth: undefined
       });
       
-      // Set login email to the registered email for convenience
       setLoginData({
         email: registerData.email,
         password: ''
       });
       
-      // Switch to login tab
       const loginTab = document.querySelector('[data-value="login"]');
       if (loginTab) {
         (loginTab as HTMLElement).click();
@@ -131,6 +141,28 @@ const AuthForm = () => {
     }
   };
 
+  const handlePhoneChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const formattedPhone = formatPhoneNumber(e.target.value);
+    setPhoneInputValue(formattedPhone);
+    
+    const phoneDigits = formattedPhone.replace(/\D/g, '');
+    setRegisterData({ ...registerData, phone: phoneDigits });
+  };
+
+  const goToPreviousYear = () => {
+    setCurrentYear(prevYear => prevYear - 1);
+  };
+
+  const goToNextYear = () => {
+    const nextYear = currentYear + 1;
+    if (nextYear <= new Date().getFullYear()) {
+      setCurrentYear(nextYear);
+    }
+  };
+
+  const fromYear = Math.max(1900, currentYear - 100);
+  const toYear = Math.min(new Date().getFullYear(), currentYear + 100);
+  
   return (
     <Card className="w-full max-w-md mx-auto bg-card/80 backdrop-blur-sm border border-astro-nebula-pink/20">
       <Tabs defaultValue="login">
@@ -201,8 +233,8 @@ const AuthForm = () => {
                   type="tel" 
                   placeholder="(00) 00000-0000" 
                   required 
-                  value={registerData.phone}
-                  onChange={(e) => setRegisterData({ ...registerData, phone: e.target.value })}
+                  value={phoneInputValue}
+                  onChange={handlePhoneChange}
                 />
               </div>
               <div className="space-y-2">
@@ -226,6 +258,22 @@ const AuthForm = () => {
                     </Button>
                   </PopoverTrigger>
                   <PopoverContent className="w-auto p-0" align="start">
+                    <div className="flex justify-between items-center p-2 border-b">
+                      <Button 
+                        variant="ghost" 
+                        size="icon" 
+                        onClick={goToPreviousYear}>
+                        <ChevronLeft className="h-4 w-4" />
+                      </Button>
+                      <div className="font-medium">{currentYear}</div>
+                      <Button 
+                        variant="ghost" 
+                        size="icon" 
+                        onClick={goToNextYear}
+                        disabled={currentYear >= new Date().getFullYear()}>
+                        <ChevronRight className="h-4 w-4" />
+                      </Button>
+                    </div>
                     <Calendar
                       mode="single"
                       selected={registerData.dateOfBirth}
@@ -233,6 +281,10 @@ const AuthForm = () => {
                       disabled={(date) => date > new Date() || date < new Date("1900-01-01")}
                       initialFocus
                       className={cn("p-3 pointer-events-auto")}
+                      fromYear={fromYear}
+                      toYear={toYear}
+                      captionLayout="buttons"
+                      defaultMonth={currentYear ? new Date(currentYear, 0) : undefined}
                     />
                   </PopoverContent>
                 </Popover>
