@@ -43,8 +43,18 @@ const SubjectPage = () => {
     enabled: !!subjectId
   });
   
+  // Fetch student progress for this specific subject
+  const {
+    data: studentSubjects,
+    isLoading: progressLoading,
+    error: progressError
+  } = useQuery({
+    queryKey: ['studentSubjects'],
+    queryFn: () => subjectsService.getStudentSubjects()
+  });
+  
   // Handle loading and error states
-  if (subjectLoading || lessonsLoading) {
+  if (subjectLoading || lessonsLoading || progressLoading) {
     return (
       <div className="min-h-screen flex flex-col items-center justify-center">
         <Loader2 className="h-10 w-10 animate-spin text-astro-nebula-pink" />
@@ -53,7 +63,7 @@ const SubjectPage = () => {
     );
   }
   
-  if (subjectError || lessonsError) {
+  if (subjectError || lessonsError || progressError) {
     toast.error('Erro ao carregar dados do assunto ou lições');
     return (
       <div className="min-h-screen flex flex-col items-center justify-center">
@@ -61,6 +71,7 @@ const SubjectPage = () => {
         <p className="text-muted-foreground mb-6">
           {subjectError instanceof Error ? subjectError.message : 'Erro desconhecido'}
           {lessonsError instanceof Error ? lessonsError.message : ''}
+          {progressError instanceof Error ? progressError.message : ''}
         </p>
         <Link to="/dashboard">
           <Button>Voltar para Dashboard</Button>
@@ -83,6 +94,15 @@ const SubjectPage = () => {
   // Get lessons from the paginated response
   const lessons = lessonsResponse?.items || [];
   
+  // Find progress for current subject
+  const currentSubjectProgress = studentSubjects?.find(
+    item => item.subject.id === subjectId
+  );
+  
+  // Get progress values from API or fallback to 0
+  const finishedLessons = currentSubjectProgress?.lessons.finishedLessons || 0;
+  const totalLessons = currentSubjectProgress?.lessons.totalLessons || lessons.length;
+  
   // Process lessons data for UI display
   const processedLessons = lessons.map((lesson: Lesson, index: number) => {
     return {
@@ -91,14 +111,10 @@ const SubjectPage = () => {
       title: lesson.title,
       content: lesson.content,
       questions: 5, // Fixed to 5 questions as requested
-      completed: false, // We'll need to implement completion status later
-      locked: index > 0 // Lock lessons after the first one for now
+      completed: index < finishedLessons, // Mark as completed if within finished lessons count
+      locked: index >= finishedLessons && index > 0 // Lock lessons that are not yet accessible
     };
   });
-  
-  // Calculate progress
-  const completedLessons = processedLessons.filter(lesson => lesson.completed).length;
-  const totalLessons = processedLessons.length;
   
   return (
     <div className="min-h-screen pb-16">
@@ -125,7 +141,7 @@ const SubjectPage = () => {
           <Card className="mb-8">
             <CardContent className="p-4">
               <ProgressBar 
-                value={completedLessons} 
+                value={finishedLessons} 
                 max={totalLessons} 
                 label={`Progresso em ${subject.name}`} 
               />
