@@ -1,3 +1,4 @@
+
 import { apiService } from './api.service';
 import { CURRENT_STUDENT_ID } from './user.service';
 
@@ -153,7 +154,7 @@ export const subjectsService = {
   },
   
   /**
-   * Get lessons for a subject with pagination
+   * Get lessons for a subject with pagination - Updated to use correct endpoint
    */
   async getLessonsBySubjectId(subjectId: string, page: number = 1, limit: number = 10): Promise<PaginatedResponse<Lesson>> {
     const response = await apiService.get<PaginatedResponse<Lesson>>(`/subjects/${subjectId}/lesson?Offset=${page}&Limit=${limit}`);

@@ -15,7 +15,7 @@ import {
   CardTitle 
 } from '@/components/ui/card';
 import { Loader2 } from 'lucide-react';
-import { subjectsService, StudentLesson, Subject } from '@/services/subjects.service';
+import { subjectsService, Subject, Lesson } from '@/services/subjects.service';
 import { toast } from 'sonner';
 
 const SubjectPage = () => {
@@ -32,14 +32,14 @@ const SubjectPage = () => {
     enabled: !!subjectId
   });
   
-  // Fetch student lessons for the subject
+  // Fetch lessons for the subject using the correct endpoint
   const {
-    data: studentLessons,
+    data: lessonsResponse,
     isLoading: lessonsLoading,
     error: lessonsError
   } = useQuery({
-    queryKey: ['studentLessons', subjectId],
-    queryFn: () => subjectId ? subjectsService.getStudentLessonsBySubjectId(subjectId) : Promise.reject('No subject ID provided'),
+    queryKey: ['subjectLessons', subjectId],
+    queryFn: () => subjectId ? subjectsService.getLessonsBySubjectId(subjectId) : Promise.reject('No subject ID provided'),
     enabled: !!subjectId
   });
   
@@ -69,7 +69,7 @@ const SubjectPage = () => {
     );
   }
   
-  if (!subject || !studentLessons) {
+  if (!subject) {
     return (
       <div className="min-h-screen flex flex-col items-center justify-center">
         <h1 className="text-2xl mb-4">Assunto não encontrado</h1>
@@ -80,17 +80,19 @@ const SubjectPage = () => {
     );
   }
   
+  // Get lessons from the paginated response
+  const lessons = lessonsResponse?.items || [];
+  
   // Process lessons data for UI display
-  const processedLessons = studentLessons.map((studentLesson, index) => {
-    const isFinished = studentLesson.status.name === 'Finished';
+  const processedLessons = lessons.map((lesson: Lesson, index: number) => {
     return {
-      id: studentLesson.subject.id,
-      subjectId: studentLesson.subject.subjectId,
-      title: studentLesson.subject.title,
-      content: studentLesson.subject.content,
+      id: lesson.id,
+      subjectId: lesson.subjectId,
+      title: lesson.title,
+      content: lesson.content,
       questions: 5, // Fixed to 5 questions as requested
-      completed: isFinished,
-      locked: !isFinished && index > 0 // Lock lessons after the first one if not completed
+      completed: false, // We'll need to implement completion status later
+      locked: index > 0 // Lock lessons after the first one for now
     };
   });
   
