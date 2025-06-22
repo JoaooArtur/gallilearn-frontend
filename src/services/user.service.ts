@@ -24,6 +24,7 @@ export interface Friend {
   name: string;
   level: number;
   daysStreak: number;
+  xp: number;
 }
 
 // Friend request interface
