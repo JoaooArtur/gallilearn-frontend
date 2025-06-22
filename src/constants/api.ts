@@ -1,2 +1,2 @@
 
-export const API_BASE_URL = 'https://localhost:7171/api/v1';
+export const API_BASE_URL = 'https://galilearn-backend.onrender.com/api/v1';
