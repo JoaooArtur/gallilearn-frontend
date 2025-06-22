@@ -2,6 +2,7 @@
 import React from 'react';
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
 
 interface FriendRequestCardProps {
   request: {
@@ -37,15 +38,17 @@ const FriendRequestCard: React.FC<FriendRequestCardProps> = ({
             {request.friend?.name ? request.friend.name.charAt(0).toUpperCase() : '?'}
           </div>
           <div className="flex-1">
-            <h4 className="font-medium">{request.friend?.name || 'Unknown User'}</h4>
-            <div className="flex items-center gap-2">
-              <p className="text-sm text-muted-foreground">{request.friend?.email || `ID: ${request.friendId.substring(0, 8)}...`}</p>
+            <div className="flex items-center gap-2 mb-1">
+              <h4 className="font-medium">{request.friend?.name || 'Unknown User'}</h4>
               {request.friend?.level && (
-                <span className="px-2 py-1 bg-astro-nebula-pink/20 text-astro-nebula-pink rounded-full text-xs font-medium">
+                <Badge variant="secondary" className="bg-astro-nebula-pink/20 text-astro-nebula-pink">
                   Nível {request.friend.level}
-                </span>
+                </Badge>
               )}
             </div>
+            <p className="text-sm text-muted-foreground">
+              {request.friend?.email || `ID: ${request.friendId.substring(0, 8)}...`}
+            </p>
           </div>
         </div>
         
