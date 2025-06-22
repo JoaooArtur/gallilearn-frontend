@@ -117,7 +117,18 @@ export const apiService = {
         };
       }
       
-      const data = await response.json();
+      // Check if response has content before trying to parse JSON
+      const contentType = response.headers.get('content-type');
+      const hasContent = contentType && contentType.includes('application/json');
+      
+      let data;
+      if (hasContent) {
+        const text = await response.text();
+        if (text) {
+          data = JSON.parse(text);
+        }
+      }
+      
       return { data, status };
     } catch (error) {
       console.error('API POST request failed:', error);
@@ -148,7 +159,18 @@ export const apiService = {
         };
       }
       
-      const data = await response.json();
+      // Check if response has content before trying to parse JSON
+      const contentType = response.headers.get('content-type');
+      const hasContent = contentType && contentType.includes('application/json');
+      
+      let data;
+      if (hasContent) {
+        const text = await response.text();
+        if (text) {
+          data = JSON.parse(text);
+        }
+      }
+      
       return { data, status };
     } catch (error) {
       console.error('API PUT request failed:', error);
