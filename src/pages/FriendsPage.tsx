@@ -298,9 +298,16 @@ const FriendsPage = () => {
                         <div className="w-12 h-12 rounded-full bg-astro-cosmic-purple flex items-center justify-center text-lg font-bold">
                           {request.friend?.name ? request.friend.name.charAt(0).toUpperCase() : '?'}
                         </div>
-                        <div>
+                        <div className="flex-1">
                           <h4 className="font-medium">{request.friend?.name || 'Unknown User'}</h4>
-                          <p className="text-sm text-muted-foreground">{request.friend?.email || `ID: ${request.friendId.substring(0, 8)}...`}</p>
+                          <div className="flex items-center gap-2">
+                            <p className="text-sm text-muted-foreground">{request.friend?.email || `ID: ${request.friendId.substring(0, 8)}...`}</p>
+                            {request.friend?.level && (
+                              <span className="px-2 py-1 bg-astro-nebula-pink/20 text-astro-nebula-pink rounded-full text-xs font-medium">
+                                Nível {request.friend.level}
+                              </span>
+                            )}
+                          </div>
                         </div>
                       </div>
                       
