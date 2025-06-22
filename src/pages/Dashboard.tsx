@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { useQuery } from '@tanstack/react-query';
 import NavBar from '@/components/NavBar';
@@ -112,26 +111,7 @@ const Dashboard = () => {
           </p>
         </div>
         
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-12">
-          {/* Daily progress */}
-          <Card>
-            <CardHeader>
-              <CardTitle className="text-lg">Progresso Diário</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="mb-4">
-                <ProgressBar 
-                  value={studentProfile?.xp || 0} 
-                  max={50} // Daily goal - could be dynamic in the future
-                  label="XP Hoje" 
-                />
-              </div>
-              <Button className="w-full">
-                Completar Meta Diária
-              </Button>
-            </CardContent>
-          </Card>
-          
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-12">
           {/* Level progress */}
           <Card>
             <CardHeader>
