@@ -1,43 +1,80 @@
 
-import React, { useState } from 'react';
+import React from 'react';
+import { useQuery } from '@tanstack/react-query';
 import NavBar from '@/components/NavBar';
 import StarField from '@/components/StarField';
 import LeaderboardCard from '@/components/LeaderboardCard';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Link } from 'react-router-dom';
-
-// Dados de exemplo para o leaderboard
-const mockLeaderboardData = {
-  'day': [
-    { id: '101', name: 'Lucas', avatar: '', xp: 120, level: 6, position: 1 },
-    { id: '102', name: 'Marina', avatar: '', xp: 90, level: 5, position: 2 },
-    { id: '103', name: 'Você', avatar: '', xp: 75, level: 5, position: 3, isCurrentUser: true },
-    { id: '104', name: 'João', avatar: '', xp: 60, level: 4, position: 4 },
-    { id: '105', name: 'Ana', avatar: '', xp: 45, level: 3, position: 5 },
-  ],
-  'week': [
-    { id: '101', name: 'Lucas', avatar: '', xp: 520, level: 6, position: 1 },
-    { id: '102', name: 'Você', avatar: '', xp: 485, level: 5, position: 2, isCurrentUser: true },
-    { id: '103', name: 'Marina', avatar: '', xp: 450, level: 5, position: 3 },
-    { id: '104', name: 'João', avatar: '', xp: 380, level: 4, position: 4 },
-    { id: '105', name: 'Ana', avatar: '', xp: 315, level: 3, position: 5 },
-  ],
-  'all-time': [
-    { id: '106', name: 'Gabriel', avatar: '', xp: 3500, level: 12, position: 1 },
-    { id: '101', name: 'Lucas', avatar: '', xp: 3200, level: 10, position: 2 },
-    { id: '103', name: 'Marina', avatar: '', xp: 2950, level: 9, position: 3 },
-    { id: '102', name: 'Você', avatar: '', xp: 2400, level: 8, position: 4, isCurrentUser: true },
-    { id: '104', name: 'João', avatar: '', xp: 1900, level: 7, position: 5 },
-    { id: '107', name: 'Carla', avatar: '', xp: 1750, level: 6, position: 6 },
-    { id: '108', name: 'Pedro', avatar: '', xp: 1620, level: 6, position: 7 },
-    { id: '105', name: 'Ana', avatar: '', xp: 1450, level: 5, position: 8 },
-    { id: '109', name: 'Rafael', avatar: '', xp: 1200, level: 4, position: 9 },
-    { id: '110', name: 'Juliana', avatar: '', xp: 950, level: 3, position: 10 },
-  ]
-};
+import { userService, CURRENT_STUDENT_ID } from '@/services/user.service';
+import { toast } from 'sonner';
 
 const LeaderboardPage = () => {
-  const [timeFrame, setTimeFrame] = useState<'day' | 'week' | 'all-time'>('week');
+  // Get current student profile
+  const { data: studentProfile } = useQuery({
+    queryKey: ['studentProfile'],
+    queryFn: () => userService.getCurrentStudent(),
+    meta: {
+      onError: (error: Error) => {
+        toast.error('Failed to load profile', {
+          description: error.message || 'Please try again later'
+        });
+      }
+    }
+  });
+
+  // Get student's friends
+  const { data: friends, isLoading } = useQuery({
+    queryKey: ['friendsRanking'],
+    queryFn: () => userService.getStudentFriends(CURRENT_STUDENT_ID),
+    meta: {
+      onError: (error: Error) => {
+        toast.error('Failed to load friends ranking', {
+          description: error.message || 'Please try again later'
+        });
+      }
+    }
+  });
+
+  // Prepare friends ranking data with current user
+  const prepareFriendsRanking = () => {
+    if (!friends || !studentProfile) return [];
+    
+    // Combine friends with current user
+    const allUsers = [
+      ...friends.map(friend => ({
+        id: friend.id,
+        name: friend.name,
+        avatar: '',
+        xp: friend.xp || 0,
+        level: friend.level,
+        position: 0, // Will be set after sorting
+        isCurrentUser: false
+      })),
+      {
+        id: studentProfile.id,
+        name: studentProfile.name,
+        avatar: '',
+        xp: studentProfile.xp || 0,
+        level: studentProfile.level,
+        position: 0, // Will be set after sorting
+        isCurrentUser: true
+      }
+    ];
+    
+    // Sort by level first, then by XP
+    const sortedUsers = allUsers.sort((a, b) => {
+      if (b.level !== a.level) return b.level - a.level;
+      return b.xp - a.xp;
+    });
+    
+    // Add positions
+    return sortedUsers.map((user, index) => ({
+      ...user,
+      position: index + 1
+    }));
+  };
+  
+  const friendsRanking = prepareFriendsRanking();
   
   return (
     <div className="min-h-screen pb-16">
@@ -50,30 +87,29 @@ const LeaderboardPage = () => {
             ← Voltar para Dashboard
           </Link>
           
-          <h1 className="text-3xl font-bold text-center mb-2">Ranking Global</h1>
+          <h1 className="text-3xl font-bold text-center mb-2">Ranking de Amigos</h1>
           <p className="text-center text-muted-foreground mb-8">
-            Compare seu progresso com outros estudantes do universo
+            Compare seu progresso com seus amigos
           </p>
           
-          <Tabs value={timeFrame} onValueChange={(value) => setTimeFrame(value as 'day' | 'week' | 'all-time')} className="w-full max-w-lg mx-auto">
-            <TabsList className="grid w-full grid-cols-3">
-              <TabsTrigger value="day">Hoje</TabsTrigger>
-              <TabsTrigger value="week">Semana</TabsTrigger>
-              <TabsTrigger value="all-time">Geral</TabsTrigger>
-            </TabsList>
-            
-            <TabsContent value="day">
-              <LeaderboardCard users={mockLeaderboardData.day} timeFrame="day" />
-            </TabsContent>
-            
-            <TabsContent value="week">
-              <LeaderboardCard users={mockLeaderboardData.week} timeFrame="week" />
-            </TabsContent>
-            
-            <TabsContent value="all-time">
-              <LeaderboardCard users={mockLeaderboardData['all-time']} timeFrame="all-time" />
-            </TabsContent>
-          </Tabs>
+          <div className="w-full max-w-lg mx-auto">
+            {isLoading ? (
+              <div className="flex justify-center p-6">
+                <div className="w-8 h-8 rounded-full border-4 border-primary border-t-transparent animate-spin"></div>
+              </div>
+            ) : friendsRanking.length > 0 ? (
+              <LeaderboardCard users={friendsRanking} timeFrame="all-time" />
+            ) : (
+              <div className="text-center p-6 border border-dashed rounded-lg">
+                <p className="text-muted-foreground mb-4">Você ainda não possui amigos. Adicione alguns amigos para ver o ranking!</p>
+                <Link to="/friends">
+                  <button className="px-4 py-2 bg-primary text-primary-foreground rounded-md hover:bg-primary/90">
+                    Ver Amigos
+                  </button>
+                </Link>
+              </div>
+            )}
+          </div>
         </div>
       </main>
     </div>
