@@ -133,6 +133,23 @@ export const userService = {
   },
   
   /**
+   * Send a friend request
+   * @param studentId The ID of the student sending the request
+   * @param friendId The ID of the student to add as friend
+   */
+  async sendFriendRequest(studentId: string, friendId: string): Promise<void> {
+    const response = await apiService.post<void, void>(
+      `/students/${studentId}/friends/${friendId}`, 
+      undefined
+    );
+    
+    if (response.error) {
+      console.error('Failed to send friend request:', response.error);
+      throw new Error(response.error);
+    }
+  },
+  
+  /**
    * Search for students by name
    */
   async searchStudents(name: string): Promise<StudentSearchResult[]> {

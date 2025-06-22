@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import NavBar from '@/components/NavBar';
@@ -99,6 +98,26 @@ const FriendsPage = () => {
     }
   });
   
+  // Send friend request mutation
+  const sendFriendRequestMutation = useMutation({
+    mutationFn: ({ friendId }: { friendId: string }) => {
+      if (!studentId) {
+        throw new Error('User ID not available');
+      }
+      return userService.sendFriendRequest(studentId, friendId);
+    },
+    onSuccess: () => {
+      toast.success('Solicitação de amizade enviada');
+      // Invalidate search results to update UI
+      queryClient.invalidateQueries({ queryKey: ['searchStudents'] });
+    },
+    onError: (error: Error) => {
+      toast.error('Falha ao enviar solicitação de amizade', {
+        description: error.message || 'Tente novamente mais tarde'
+      });
+    }
+  });
+  
   // Handle accepting a friend request
   const handleAcceptRequest = (requestId: string) => {
     acceptFriendMutation.mutate({ requestId });
@@ -107,6 +126,11 @@ const FriendsPage = () => {
   // Handle rejecting a friend request
   const handleRejectRequest = (requestId: string) => {
     rejectFriendMutation.mutate({ requestId });
+  };
+  
+  // Handle sending a friend request
+  const handleSendFriendRequest = (friendId: string) => {
+    sendFriendRequestMutation.mutate({ friendId });
   };
   
   // Search for students
@@ -141,7 +165,7 @@ const FriendsPage = () => {
   });
   
   const isLoading = isLoadingFriends || isLoadingRequests;
-  const isProcessing = acceptFriendMutation.isPending || rejectFriendMutation.isPending;
+  const isProcessing = acceptFriendMutation.isPending || rejectFriendMutation.isPending || sendFriendRequestMutation.isPending;
   
   return (
     <div className="min-h-screen pb-16">
@@ -187,7 +211,14 @@ const FriendsPage = () => {
                           <p className="font-medium">{result.name}</p>
                           <p className="text-xs text-muted-foreground">{result.email}</p>
                         </div>
-                        <Button size="sm" variant="outline">Adicionar</Button>
+                        <Button 
+                          size="sm" 
+                          variant="outline"
+                          onClick={() => handleSendFriendRequest(result.id)}
+                          disabled={isProcessing}
+                        >
+                          {sendFriendRequestMutation.isPending ? 'Enviando...' : 'Adicionar'}
+                        </Button>
                       </div>
                     ))}
                   </div>
