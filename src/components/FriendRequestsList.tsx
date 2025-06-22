@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { userService } from '@/services/user.service';
@@ -18,6 +17,9 @@ interface FriendRequest {
     email: string;
     level?: number;
   };
+  name?: string;
+  level?: number;
+  email?: string;
 }
 
 interface FriendRequestsListProps {
@@ -31,6 +33,8 @@ const FriendRequestsList: React.FC<FriendRequestsListProps> = ({
 }) => {
   const { studentId } = useAuth();
   const queryClient = useQueryClient();
+  
+  console.log('Friend requests in list:', friendRequests); // Debug log to see the data structure
   
   // Accept friend request mutation
   const acceptFriendMutation = useMutation({

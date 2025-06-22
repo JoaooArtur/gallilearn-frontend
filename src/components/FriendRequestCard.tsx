@@ -14,6 +14,10 @@ interface FriendRequestCardProps {
       email: string;
       level?: number;
     };
+    // Add these properties in case they come directly on the request object
+    name?: string;
+    level?: number;
+    email?: string;
   };
   onAccept: (requestId: string) => void;
   onReject: (requestId: string) => void;
@@ -30,24 +34,33 @@ const FriendRequestCard: React.FC<FriendRequestCardProps> = ({
   acceptingRequestId,
   rejectingRequestId
 }) => {
+  // Get name from friend object or directly from request
+  const friendName = request.friend?.name || request.name || 'Unknown User';
+  // Get level from friend object or directly from request
+  const friendLevel = request.friend?.level || request.level;
+  // Get email from friend object or directly from request
+  const friendEmail = request.friend?.email || request.email || `ID: ${request.friendId.substring(0, 8)}...`;
+
+  console.log('Friend request data:', request); // Debug log to see the actual data structure
+
   return (
     <Card className="overflow-hidden">
       <CardContent className="p-4">
         <div className="flex items-center gap-4 mb-4">
           <div className="w-12 h-12 rounded-full bg-astro-cosmic-purple flex items-center justify-center text-lg font-bold">
-            {request.friend?.name ? request.friend.name.charAt(0).toUpperCase() : '?'}
+            {friendName.charAt(0).toUpperCase()}
           </div>
           <div className="flex-1">
             <div className="flex items-center gap-2 mb-1">
-              <h4 className="font-medium">{request.friend?.name || 'Unknown User'}</h4>
-              {request.friend?.level && (
+              <h4 className="font-medium">{friendName}</h4>
+              {friendLevel && (
                 <Badge variant="secondary" className="bg-astro-nebula-pink/20 text-astro-nebula-pink">
-                  Nível {request.friend.level}
+                  Nível {friendLevel}
                 </Badge>
               )}
             </div>
             <p className="text-sm text-muted-foreground">
-              {request.friend?.email || `ID: ${request.friendId.substring(0, 8)}...`}
+              {friendEmail}
             </p>
           </div>
         </div>
