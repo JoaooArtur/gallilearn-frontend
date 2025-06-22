@@ -9,7 +9,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Link } from 'react-router-dom';
 import { subjectsService } from '@/services/subjects.service';
-import { userService } from '@/services/user.service';
+import { userService, CURRENT_STUDENT_ID } from '@/services/user.service';
 import { toast } from 'sonner';
 
 const Dashboard = () => {
@@ -42,7 +42,7 @@ const Dashboard = () => {
   // Get student's friends
   const { data: friends } = useQuery({
     queryKey: ['friendsRanking'],
-    queryFn: () => userService.getStudentFriends(),
+    queryFn: () => userService.getStudentFriends(CURRENT_STUDENT_ID),
     meta: {
       onError: (error: Error) => {
         toast.error('Failed to load friends', {

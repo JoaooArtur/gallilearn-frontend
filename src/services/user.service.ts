@@ -1,4 +1,3 @@
-
 import { apiService } from './api.service';
 import { useAuth } from '@/context/AuthContext';
 
@@ -72,7 +71,7 @@ export const userService = {
   /**
    * Get student's friends
    */
-  async getStudentFriends(studentId: string): Promise<Friend[]> {
+  async getStudentFriends(studentId: string = CURRENT_STUDENT_ID): Promise<Friend[]> {
     const response = await apiService.get<Friend[]>(`/students/${studentId}/friends`);
     
     if (response.error) {
@@ -106,7 +105,7 @@ export const userService = {
   async acceptFriendRequest(studentId: string, requestId: string): Promise<void> {
     const response = await apiService.put<void, void>(
       `/students/${studentId}/friends/requests/${requestId}/accept`, 
-      {}
+      undefined
     );
     
     if (response.error) {
@@ -123,7 +122,7 @@ export const userService = {
   async rejectFriendRequest(studentId: string, requestId: string): Promise<void> {
     const response = await apiService.put<void, void>(
       `/students/${studentId}/friends/requests/${requestId}/reject`, 
-      {}
+      undefined
     );
     
     if (response.error) {
