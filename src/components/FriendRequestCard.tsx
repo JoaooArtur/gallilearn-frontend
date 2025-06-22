@@ -39,7 +39,7 @@ const FriendRequestCard: React.FC<FriendRequestCardProps> = ({
   // Get level from friend object or directly from request
   const friendLevel = request.friend?.level || request.level;
   // Get email from friend object or directly from request
-  const friendEmail = request.friend?.email || request.email || `ID: ${request.friendId.substring(0, 8)}...`;
+  const friendEmail = request.friend?.email || request.email;
 
   console.log('Friend request data:', request); // Debug log to see the actual data structure
 
@@ -59,9 +59,11 @@ const FriendRequestCard: React.FC<FriendRequestCardProps> = ({
                 </Badge>
               )}
             </div>
-            <p className="text-sm text-muted-foreground">
-              {friendEmail}
-            </p>
+            {friendEmail && (
+              <p className="text-sm text-muted-foreground">
+                {friendEmail}
+              </p>
+            )}
           </div>
         </div>
         
